@@ -1,5 +1,5 @@
 #CROSS_COMPILE ?= arm-linux-gnueabihf-
-CROSS_COMPILE ?= arm-linux-
+#CROSS_COMPILE ?= arm-linux-
 CC = $(CROSS_COMPILE)gcc 
 CFLAGS= -I./include/
 

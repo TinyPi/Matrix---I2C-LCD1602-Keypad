@@ -12,146 +12,171 @@
 
 #define BACKLOG 5     // how many pending connections queue will hold
 
-#define BUF_SIZE 200
+#define BUF_SIZE 512
 
 int fd_A[BACKLOG];    // accepted connection fd
 int conn_amount;    // current connection amount
 
 void showclient()
 {
-    int i;
-    printf("client amount: %d\n", conn_amount);
-    for (i = 0; i < BACKLOG; i++) {
-        printf("[%d]:%d  ", i, fd_A[i]);
-    }
-    printf("\n\n");
+	int i;
+	printf("client amount: %d\n", conn_amount);
+	for (i = 0; i < BACKLOG; i++) {
+		printf("[%d]:%d  ", i, fd_A[i]);
+	}
+	printf("\n\n");
 }
 
-int main(void)
+typedef struct
 {
-    int sock_fd, new_fd;  // listen on sock_fd, new connection on new_fd
-    struct sockaddr_in server_addr;    // server address information
-    struct sockaddr_in client_addr; // connector's address information
-    socklen_t sin_size;
-    int yes = 1;
-    char buf[BUF_SIZE];
-    int ret;
-    int i;
+     int 	   CLIENT_ID;
+     unsigned char START_TOKEN;
+     unsigned char CMD_LENGTH;
+     unsigned char pBUF[256];
+     unsigned char END_TOKEN;
+}PASER_t;
 
-    if ((sock_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-        perror("socket");
-        exit(1);
-    }
+void parse(int client_id, char *buf, unsigned int size, PASER_t *pkt)
+{ 
+        pkt->CLIENT_ID = client_id;
+        pkt->START_TOKEN = buf[0];
+	pkt->CMD_LENGTH = buf[1];
+	memcpy((void *)pkt->pBUF, (void *)&buf[2], pkt->CMD_LENGTH);
+	pkt->END_TOKEN = buf[size-1];           
+}
 
-    if (setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
-        perror("setsockopt");
-        exit(1);
-    }
-    
-    server_addr.sin_family = AF_INET;         // host byte order
-    server_addr.sin_port = htons(MYPORT);     // short, network byte order
-    server_addr.sin_addr.s_addr = INADDR_ANY; // automatically fill with my IP
-    memset(server_addr.sin_zero, '\0', sizeof(server_addr.sin_zero));
 
-    if (bind(sock_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
-        perror("bind");
-        exit(1);
-    }
+int CALL_BACK(int client_id, char *buf, unsigned int size)
+{	
+	PASER_t pkt;
+	parse(client_id, buf, size, &pkt);
+        return 0;	
+}
 
-    if (listen(sock_fd, BACKLOG) == -1) {
-        perror("listen");
-        exit(1);
-    }
+int server_init(void)
+{
+	int sock_fd, new_fd;  // listen on sock_fd, new connection on new_fd
+	struct sockaddr_in server_addr;    // server address information
+	struct sockaddr_in client_addr; // connector's address information
+	socklen_t sin_size;
+	int yes = 1;
+	char buf[BUF_SIZE];
+	int ret;
+	int i;
 
-    printf("listen port %d\n", MYPORT);
+	if ((sock_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+		perror("socket");
+		exit(1);
+	}
 
-    fd_set fdsr;
-    int maxsock;
-    struct timeval tv;
+	if (setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
+		perror("setsockopt");
+		exit(1);
+	}
 
-    conn_amount = 0;
-    sin_size = sizeof(client_addr);
-    maxsock = sock_fd;
-    while (1) {
-        // initialize file descriptor set
-        FD_ZERO(&fdsr);
-        FD_SET(sock_fd, &fdsr);
+	server_addr.sin_family = AF_INET;         // host byte order
+	server_addr.sin_port = htons(MYPORT);     // short, network byte order
+	server_addr.sin_addr.s_addr = INADDR_ANY; // automatically fill with my IP
+	memset(server_addr.sin_zero, '\0', sizeof(server_addr.sin_zero));
 
-        // timeout setting
-        tv.tv_sec = 30;
-        tv.tv_usec = 0;
+	if (bind(sock_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
+		perror("bind");
+		exit(1);
+	}
 
-        // add active connection to fd set
-        for (i = 0; i < BACKLOG; i++) {
-            if (fd_A[i] != 0) {
-                FD_SET(fd_A[i], &fdsr);
-            }
-        }
+	if (listen(sock_fd, BACKLOG) == -1) {
+		perror("listen");
+		exit(1);
+	}
 
-        ret = select(maxsock + 1, &fdsr, NULL, NULL, &tv);
-        if (ret < 0) {
-            perror("select");
-            break;
-        } else if (ret == 0) {
-            printf("timeout\n");
-            continue;
-        }
+	printf("listen port %d\n", MYPORT);
 
-        // check every fd in the set
-        for (i = 0; i < conn_amount; i++) {
-            if (FD_ISSET(fd_A[i], &fdsr)) {
-                ret = recv(fd_A[i], buf, sizeof(buf), 0);
-                if (ret <= 0) {        // client close
-                    printf("client[%d] close\n", i);
-                    close(fd_A[i]);
-                    FD_CLR(fd_A[i], &fdsr);
-                    fd_A[i] = 0;
-                } 
-		else 
-		{   
-                    // receive data
-                    if (ret < BUF_SIZE)
-                        memset(&buf[ret], '\0', 1);
-                    printf("client[%d] send:%s\n", i, buf);
-                }
-            }
-        }
+	fd_set fdsr;
+	int maxsock;
+	struct timeval tv;
 
-        // check whether a new connection comes
-        if (FD_ISSET(sock_fd, &fdsr)) 
-	{
-            new_fd = accept(sock_fd, (struct sockaddr *)&client_addr, &sin_size);
-            if (new_fd <= 0) {
-                perror("accept");
-                continue;
-            }
+	conn_amount = 0;
+	sin_size = sizeof(client_addr);
+	maxsock = sock_fd;
+	while (1) {
+		// initialize file descriptor set
+		FD_ZERO(&fdsr);
+		FD_SET(sock_fd, &fdsr);
 
-            // add to fd queue
-            if (conn_amount < BACKLOG) {
-                fd_A[conn_amount++] = new_fd;
-                printf("new connection client[%d] %s:%d\n", conn_amount,
-                        inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
-                if (new_fd > maxsock)
-                    maxsock = new_fd;
-            }
-            else {
-                printf("max connections arrive, exit\n");
-                send(new_fd, "bye", 4, 0);
-                close(new_fd);
-                break;
-            }
-        }
-        showclient();
-    }
+		// timeout setting
+		tv.tv_sec = 30;
+		tv.tv_usec = 0;
 
-    // close other connections
-    for (i = 0; i < BACKLOG; i++) {
-        if (fd_A[i] != 0) {
-            close(fd_A[i]);
-        }
-    }
+		// add active connection to fd set
+		for (i = 0; i < BACKLOG; i++) {
+			if (fd_A[i] != 0) {
+				FD_SET(fd_A[i], &fdsr);
+			}
+		}
 
-    exit(0);
+		ret = select(maxsock + 1, &fdsr, NULL, NULL, &tv);
+		if (ret < 0) {
+			perror("select");
+			break;
+		} else if (ret == 0) {
+			printf("timeout\n");
+			continue;
+		}
+
+		// check every fd in the set
+		for (i = 0; i < conn_amount; i++) {
+			if (FD_ISSET(fd_A[i], &fdsr)) {
+				ret = recv(fd_A[i], buf, sizeof(buf), 0);
+				if (ret <= 0) {        // client close
+					printf("client[%d] close\n", i);
+					close(fd_A[i]);
+					FD_CLR(fd_A[i], &fdsr);
+					fd_A[i] = 0;
+				} 
+				else 
+				{   
+					// receive data
+					printf("client[%d] send:%s\n", i, buf);
+					CALL_BACK(i,buf,ret);
+				}
+			}
+		}
+
+		// check whether a new connection comes
+		if (FD_ISSET(sock_fd, &fdsr)) 
+		{
+			new_fd = accept(sock_fd, (struct sockaddr *)&client_addr, &sin_size);
+			if (new_fd <= 0) {
+				perror("accept");
+				continue;
+			}
+
+			// add to fd queue
+			if (conn_amount < BACKLOG) {
+				fd_A[conn_amount++] = new_fd;
+				printf("new connection client[%d] %s:%d\n", conn_amount,
+						inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+				if (new_fd > maxsock)
+					maxsock = new_fd;
+			}
+			else {
+				printf("max connections arrive, exit\n");
+				send(new_fd, "bye", 4, 0);
+				close(new_fd);
+				break;
+			}
+		}
+		showclient();
+	}
+
+	// close other connections
+	for (i = 0; i < BACKLOG; i++) {
+		if (fd_A[i] != 0) {
+			close(fd_A[i]);
+		}
+	}
+
+	exit(0);
 }
 
 
