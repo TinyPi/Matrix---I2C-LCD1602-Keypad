@@ -3,7 +3,7 @@ CROSS_COMPILE ?= arm-linux-
 CC = $(CROSS_COMPILE)gcc 
 CFLAGS= -I./include/
 
-TARGET	=  $(patsubst Matrix-%.c,matrix-%, $(wildcard *.c))
+TARGET	=  mx 
 SRC 	=  $(wildcard *.c)
 SRC 	+= $(wildcard *.h)
 
