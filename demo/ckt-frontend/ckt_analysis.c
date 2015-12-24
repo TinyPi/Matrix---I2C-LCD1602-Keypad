@@ -9,11 +9,11 @@
 
 int main()
 {
-    char *originalData;
+    //char *originalData;
     //RobotDada data;
     //get data which is from FIFO sent by backgrond
-    originalData = (char *)malloc(sizeof(char) * ROBOT_DATA_MAX_LEN);
-    originalData = read_p(FIFO_NAME, O_RDONLY);
-    
+    //originalData = (char *)malloc(sizeof(char) * ROBOT_DATA_MAX_LEN);
+    //originalData = read_p(FIFO_NAME, O_RDONLY);
+
     return 0;
 }

@@ -10,8 +10,8 @@
 #ifndef _FIFO_P_
 #define _FIFO_P_
 
-int write_p(const char *filename, int mode,char *buf, int len);
+int write_p(int, char *, int);
 
-char *read_p(const char *filename, int mode);
+int read_p(int, char *, int);
 
 #endif
