@@ -28,7 +28,8 @@ libfahw.a
 
 /install/*
 
-
+#vim swap file
+*.swp
 
 
 

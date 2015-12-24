@@ -1,4 +1,4 @@
-SUBDIRS			= $(wildcard matrix*)
+SUBDIRS			= $(wildcard matrix*) $(wildcard ckt*)
 TARGET			= subdirs
 PHONY			+= $(TARGET) $(SUBDIRS) %.clean
 
