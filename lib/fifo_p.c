@@ -1,11 +1,3 @@
- #include <stdio.h>
- #include <stdlib.h>
- #include <string.h>
- #include <sys/types.h>
- #include <sys/stat.h>
- #include <errno.h>
- #include <unistd.h>
- #include <fcntl.h>
  #include "./fifo_p.h"
 
 #define BUFF_SIZE 1024
@@ -49,14 +41,14 @@ char *read_p(const char *filename, int mode) {
          if(access(filename,F_OK) == -1) {
           if((mkfifo(filename,mode) < 0)&&(errno != EEXIST)) {
             printf("Can NOT create fifo file!\n");
-            return -1;
+            return NULL;
           }
         }
 
 //open
         if((fd=open(filename,mode|O_NONBLOCK)) == -1){
          printf("Open fifo error!\n");
-         return -1;
+         return NULL;
         }
 
 //read
