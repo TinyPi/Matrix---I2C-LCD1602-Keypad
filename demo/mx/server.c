@@ -36,13 +36,22 @@ typedef struct
      unsigned char END_TOKEN;
 }PASER_t;
 
+void pack(int client_id, char *buf, unsigned int size,PASER_t *pkt)
+{
+    pkt->CLIENT_ID = client_id;
+    pkt->START_TOKEN = 0x86;
+    pkt->CMD_LENGTH = size;
+    memcpy((void *)pkt->pBUF, (void *)buf, pkt->CMD_LENGTH);
+    pkt->END_TOKEN = 0x68;
+}
+
 void parse(int client_id, char *buf, unsigned int size, PASER_t *pkt)
-{ 
-        pkt->CLIENT_ID = client_id;
-        pkt->START_TOKEN = buf[0];
-	pkt->CMD_LENGTH = buf[1];
-	memcpy((void *)pkt->pBUF, (void *)&buf[2], pkt->CMD_LENGTH);
-	pkt->END_TOKEN = buf[size-1];           
+{
+    pkt->CLIENT_ID = client_id;
+    pkt->START_TOKEN = buf[0];
+    pkt->CMD_LENGTH = buf[1];
+    memcpy((void *)pkt->pBUF, (void *)&buf[2], pkt->CMD_LENGTH);
+    pkt->END_TOKEN = buf[size-1];
 }
 
 
