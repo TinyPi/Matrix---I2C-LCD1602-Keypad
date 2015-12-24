@@ -6,58 +6,32 @@
  #include <errno.h>
  #include <unistd.h>
  #include <fcntl.h>
- #include "./fifo_p.h"
+ #include "includes/fifo_p.h"
 
-#define BUFF_SIZE 1024
+#define BUFF_SIZE 512
 
 //write_p
-int write_p(const char *filename, int mode,char *buf, int len) {
+int write_p(int fd, char *buf, int len) {
 
-         int fd;
+         
          int real_write;
 
-//check
-        if(access(filename,F_OK) == 0) {
-          if((mkfifo(filename,mode)<0) && (errno != EEXIST)) {
-            printf("Can NOT create fifo file!\n");
-            return -1;
-         }
-        }
 
-//open
-        if((fd=open(filename,mode)) == -1) {
-        printf("Open fifo error!\n");
-        return -1;
-        }
 //write
         if ((real_write = write(fd,buf,len)) > 0) {
          printf("Write into pipe: '%s'.\n",buf);
         }
 
-     close(fd);
      return 0;
 }
 
 // read fifo_p
-char *read_p(const char *filename, int mode) {
+char *read_p( int fd) {
 
-         int fd;
+         
          int real_read;
          char buf[BUFF_SIZE];
 
-//check
-         if(access(filename,F_OK) == -1) {
-          if((mkfifo(filename,mode) < 0)&&(errno != EEXIST)) {
-            printf("Can NOT create fifo file!\n");
-            return -1;
-          }
-        }
-
-//open
-        if((fd=open(filename,mode|O_NONBLOCK)) == -1){
-         printf("Open fifo error!\n");
-         return -1;
-        }
 
 //read
        do {
@@ -67,6 +41,5 @@ char *read_p(const char *filename, int mode) {
          }
        } while (real_read > 0);
 
-     close(fd);
      return buf;
 }
