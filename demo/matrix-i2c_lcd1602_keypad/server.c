@@ -27,7 +27,7 @@ void showclient()
     printf("\n\n");
 }
 
-int main(void)
+int server_main(void)
 {
     int sock_fd, new_fd;  // listen on sock_fd, new connection on new_fd
     struct sockaddr_in server_addr;    // server address information
@@ -153,3 +153,8 @@ int main(void)
 
     exit(0);
 }
+
+
+
+
+
