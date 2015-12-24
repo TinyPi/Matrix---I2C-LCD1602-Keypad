@@ -22,4 +22,12 @@ install:
 		cd ..;\
 	done;  
 	
+	for demo_folder in $(wildcard ckt*); do \
+		cd $$demo_folder; \
+		install --mode=755 ckt* $(INSTALLDIR)/usr/bin; \
+		cd ..;\
+	done; 
+
+	rm -fr $(INSTALLDIR)/usr/bin/*.c
+	find . -name "*.so" -exec cp {} ../lib/cktlib/ \;
 .PHONY: $(PHONY) install clean distclean

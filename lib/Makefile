@@ -46,5 +46,6 @@ install: $(LIB)
 	install ./includes/libfahw*.h $(INSTALLDIR)/include
 	install --mode=644 libfahw.so $(INSTALLDIR)/lib
 	install --mode=644 libfahw.a $(INSTALLDIR)/lib
+	install --mode=664 ./cktlib/*.so $(INSTALLDIR)/lib
 clean:
 	rm -rf $(LIB) $(LIBOBJ) $(SLIB) $(DEPS) $(OBJDIR) $(DEPDIR)

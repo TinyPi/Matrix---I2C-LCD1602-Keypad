@@ -1,9 +1,8 @@
-#CROSS_COMPILE ?= arm-linux-gnueabihf-
-CROSS_COMPILE ?= arm-linux-
+CROSS_COMPILE ?= arm-linux-gnueabihf-
 CC = $(CROSS_COMPILE)gcc 
 CFLAGS= -I./include/
 
-TARGET	=  mx 
+TARGET	=  $(patsubst Matrix-%.c,matrix-%, $(wildcard *.c)) 
 SRC 	=  $(wildcard *.c)
 SRC 	+= $(wildcard *.h)
 
