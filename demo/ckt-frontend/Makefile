@@ -17,7 +17,7 @@ SRC 	+= $(wildcard *.h)
 
 $(TARGET):$(SRC)
 	cd $(SUBDIRS);$(MAKE)
-	$(CC) -o $@ $(LFLAGS) $(CFLAGS) $^ -lm -Wall
+	$(CC) -lpthread -o $@ $(LFLAGS) $(CFLAGS) $^ -lm -Wall
 
 clean:
 	rm -f $(TARGET)
