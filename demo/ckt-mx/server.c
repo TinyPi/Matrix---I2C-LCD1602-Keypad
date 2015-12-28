@@ -19,8 +19,8 @@ int conn_amount;    // current connection amount
 
 void showclient()
 {
-	int i;
 #if 0
+	int i;
 	printf("client amount: %d\n", conn_amount);
 	for (i = 0; i < BACKLOG; i++) {
 		printf("[%d]:%d  ", i, fd_A[i]);
@@ -31,7 +31,8 @@ void showclient()
 
 typedef struct
 {
-	int 	   CLIENT_ID;
+	int 	      CLIENT_ID;
+	int 	      SOCKET_FD;	
 	unsigned char START_TOKEN;
 	unsigned char CMD_LENGTH;
 	unsigned char pBUF[256];
@@ -54,6 +55,7 @@ void parse(int client_id, char *buf, unsigned int size, PASER_t *pkt)
 	pkt->CMD_LENGTH = buf[1];
 	memcpy((void *)pkt->pBUF, (void *)&buf[2], pkt->CMD_LENGTH);
 	pkt->END_TOKEN = buf[size-1];
+	pkt->SOCKET_FD = fd_A[client_id];
 }
 
 
@@ -61,6 +63,8 @@ int CALL_BACK(int client_id, char *buf, unsigned int size)
 {	
 	PASER_t pkt;
 	parse(client_id, buf, size, &pkt);
+	//call send_fifo 
+		
 	return 0;	
 }
 
@@ -109,11 +113,11 @@ int server_init(void)
 	conn_amount = 0;
 	sin_size = sizeof(client_addr);
 	maxsock = sock_fd;
-	while (1) {
+	while (1) 
+	{
 		// initialize file descriptor set
 		FD_ZERO(&fdsr);
 		FD_SET(sock_fd, &fdsr);
-
 		// timeout setting
 		tv.tv_sec = 30;
 		tv.tv_usec = 0;
@@ -153,7 +157,7 @@ int server_init(void)
 				else 
 				{   
 					// receive data
-					printf("client[%d] send:%s\n", i, buf);
+					//printf("client[%d] send:%s\n", i, buf);
 					CALL_BACK(i,buf,ret);
 				}
 			}
