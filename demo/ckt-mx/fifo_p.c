@@ -6,7 +6,7 @@
  #include <errno.h>
  #include <unistd.h>
  #include <fcntl.h>
- #include "includes/fifo_p.h"
+ #include "fifo_p.h"
 
 #define BUFF_SIZE 512
 
