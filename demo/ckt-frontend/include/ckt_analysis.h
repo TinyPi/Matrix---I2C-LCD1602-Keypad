@@ -1,10 +1,9 @@
 #include <stdio.h>
 
-typedef struct RobotDada
+struct RobotData
 {
-    char PrefixType:2;                //type:0x00:command;0x01:data;
-    char PrefixReserve:6;
+    char command[8];
     void *priv;
-}RobotDada;
+};
 
 

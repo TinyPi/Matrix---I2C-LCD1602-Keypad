@@ -7,6 +7,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include "inf_server.h"
+
 
 #define MYPORT 8088    // the port users will be connecting to
 
@@ -17,36 +19,19 @@
 int fd_A[BACKLOG];    // accepted connection fd
 int conn_amount;    // current connection amount
 
-void showclient()
+
+int pack_and_send(char *buf, unsigned int size)
 {
 #if 0
-	int i;
-	printf("client amount: %d\n", conn_amount);
-	for (i = 0; i < BACKLOG; i++) {
-		printf("[%d]:%d  ", i, fd_A[i]);
-	}
-	printf("\n\n");
-#endif
-}
-
-typedef struct
-{
-	int 	      CLIENT_ID;
-	int 	      SOCKET_FD;	
-	unsigned char START_TOKEN;
-	unsigned char CMD_LENGTH;
-	unsigned char pBUF[256];
-	unsigned char END_TOKEN;
-}PASER_t;
-
-void pack(int client_id, char *buf, unsigned int size,PASER_t *pkt)
-{
 	pkt->CLIENT_ID = client_id;
 	pkt->START_TOKEN = 0x86;
 	pkt->CMD_LENGTH = size;
 	memcpy((void *)pkt->pBUF, (void *)buf, pkt->CMD_LENGTH);
 	pkt->END_TOKEN = 0x68;
+#endif
+	return 0;
 }
+
 
 void parse(int client_id, char *buf, unsigned int size, PASER_t *pkt)
 {
