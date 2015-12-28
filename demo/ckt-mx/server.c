@@ -10,7 +10,7 @@
 
 #define MYPORT 8088    // the port users will be connecting to
 
-#define BACKLOG 5     // how many pending connections queue will hold
+#define BACKLOG 128     // how many pending connections queue will hold
 
 #define BUF_SIZE 512
 
@@ -20,38 +20,40 @@ int conn_amount;    // current connection amount
 void showclient()
 {
 	int i;
+#if 0
 	printf("client amount: %d\n", conn_amount);
 	for (i = 0; i < BACKLOG; i++) {
 		printf("[%d]:%d  ", i, fd_A[i]);
 	}
 	printf("\n\n");
+#endif
 }
 
 typedef struct
 {
-     int 	   CLIENT_ID;
-     unsigned char START_TOKEN;
-     unsigned char CMD_LENGTH;
-     unsigned char pBUF[256];
-     unsigned char END_TOKEN;
+	int 	   CLIENT_ID;
+	unsigned char START_TOKEN;
+	unsigned char CMD_LENGTH;
+	unsigned char pBUF[256];
+	unsigned char END_TOKEN;
 }PASER_t;
 
 void pack(int client_id, char *buf, unsigned int size,PASER_t *pkt)
 {
-    pkt->CLIENT_ID = client_id;
-    pkt->START_TOKEN = 0x86;
-    pkt->CMD_LENGTH = size;
-    memcpy((void *)pkt->pBUF, (void *)buf, pkt->CMD_LENGTH);
-    pkt->END_TOKEN = 0x68;
+	pkt->CLIENT_ID = client_id;
+	pkt->START_TOKEN = 0x86;
+	pkt->CMD_LENGTH = size;
+	memcpy((void *)pkt->pBUF, (void *)buf, pkt->CMD_LENGTH);
+	pkt->END_TOKEN = 0x68;
 }
 
 void parse(int client_id, char *buf, unsigned int size, PASER_t *pkt)
 {
-    pkt->CLIENT_ID = client_id;
-    pkt->START_TOKEN = buf[0];
-    pkt->CMD_LENGTH = buf[1];
-    memcpy((void *)pkt->pBUF, (void *)&buf[2], pkt->CMD_LENGTH);
-    pkt->END_TOKEN = buf[size-1];
+	pkt->CLIENT_ID = client_id;
+	pkt->START_TOKEN = buf[0];
+	pkt->CMD_LENGTH = buf[1];
+	memcpy((void *)pkt->pBUF, (void *)&buf[2], pkt->CMD_LENGTH);
+	pkt->END_TOKEN = buf[size-1];
 }
 
 
@@ -59,7 +61,7 @@ int CALL_BACK(int client_id, char *buf, unsigned int size)
 {	
 	PASER_t pkt;
 	parse(client_id, buf, size, &pkt);
-        return 0;	
+	return 0;	
 }
 
 int server_init(void)
@@ -117,8 +119,10 @@ int server_init(void)
 		tv.tv_usec = 0;
 
 		// add active connection to fd set
-		for (i = 0; i < BACKLOG; i++) {
-			if (fd_A[i] != 0) {
+		for (i = 0; i<BACKLOG; i++) 
+		{
+			if (fd_A[i] != 0) 
+			{
 				FD_SET(fd_A[i], &fdsr);
 			}
 		}
@@ -133,14 +137,18 @@ int server_init(void)
 		}
 
 		// check every fd in the set
-		for (i = 0; i < conn_amount; i++) {
-			if (FD_ISSET(fd_A[i], &fdsr)) {
+		for (i = 0; i<conn_amount; i++)
+		{
+			if (FD_ISSET(fd_A[i], &fdsr)) 
+			{
 				ret = recv(fd_A[i], buf, sizeof(buf), 0);
-				if (ret <= 0) {        // client close
+				if (ret <= 0) 
+				{        // client close
 					printf("client[%d] close\n", i);
 					close(fd_A[i]);
 					FD_CLR(fd_A[i], &fdsr);
 					fd_A[i] = 0;
+					conn_amount--;
 				} 
 				else 
 				{   
@@ -155,31 +163,34 @@ int server_init(void)
 		if (FD_ISSET(sock_fd, &fdsr)) 
 		{
 			new_fd = accept(sock_fd, (struct sockaddr *)&client_addr, &sin_size);
-			if (new_fd <= 0) {
+			if (new_fd <= 0) 
+			{
 				perror("accept");
 				continue;
 			}
-
 			// add to fd queue
-			if (conn_amount < BACKLOG) {
+			if (conn_amount < BACKLOG) 
+			{
 				fd_A[conn_amount++] = new_fd;
 				printf("new connection client[%d] %s:%d\n", conn_amount,
 						inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
 				if (new_fd > maxsock)
 					maxsock = new_fd;
 			}
-			else {
+			else 
+			{
 				printf("max connections arrive, exit\n");
 				send(new_fd, "bye", 4, 0);
 				close(new_fd);
 				break;
 			}
 		}
-		showclient();
+		//showclient();
 	}
 
 	// close other connections
-	for (i = 0; i < BACKLOG; i++) {
+	for (i = 0; i < BACKLOG; i++) 
+	{
 		if (fd_A[i] != 0) {
 			close(fd_A[i]);
 		}
