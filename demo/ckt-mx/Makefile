@@ -2,14 +2,17 @@
 CROSS_COMPILE ?= arm-linux-
 CC = $(CROSS_COMPILE)gcc 
 CFLAGS= -I./include/
+CFLAGS+=-I../../lib/includes/
+CFLAGS+= -I./utils/
 
+LFLAGS= -L../../lib/  -lfahw
 TARGET	=  mx 
 SRC 	=  $(wildcard *.c)
 SRC 	+= $(wildcard *.h)
 
 
 $(TARGET):$(SRC)
-	$(CC) -o $@ $(CFLAGS) $^ ./lib/libfahw.a  -lm -lpthread -Wall 
+	$(CC) -o $@ $(CFLAGS) $^ ../../lib/libfahw.a  -lm -lpthread -Wall 
 
 .PHONY: clean install 
 clean:
