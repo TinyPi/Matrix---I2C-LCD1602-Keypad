@@ -22,8 +22,8 @@ static pthread_t ReadId, WriteId;
 static char DataBuffer4R[256];
 static char DataBuffer4W[256];
 
-static struct RobotData RobotData4R;
-static struct RobotData RobotData4W;
+static struct FIFOData FIFOData4R;
+static struct FIFOData FIFOData4W;
 
 
 void signalFIFO(int signal)
@@ -35,41 +35,43 @@ void signalFIFO(int signal)
     }
 }
 
-static int DataBuf2RobotData(char *buf)
+static int DataBuf2FIFOData(char *buf)
 {
     int RobotDataLen = 0;
 
-    memcpy(&RobotData4R.dataLen, buf + ROBOT_DATA_LENF_OFFSET, sizeof(RobotData4R.dataLen));
-    memcpy(&RobotData4R.sourceFlag, buf + ROBOT_DATA_SRCF_OFFSET, sizeof(RobotData4R.sourceFlag));
-    memcpy(&RobotData4R.command, buf + ROBOT_DATA_COMM_OFFSET, sizeof(RobotData4R.command));
+    memcpy(&FIFOData4R.dataLen, buf + ROBOT_DATA_LENF_OFFSET, sizeof(FIFOData4R.dataLen));
+    memcpy(&FIFOData4R.sourceFlag, buf + ROBOT_DATA_SRCF_OFFSET, sizeof(FIFOData4R.sourceFlag));
+    memcpy(&FIFOData4R.RobotData.command, buf + ROBOT_DATA_COMM_OFFSET, sizeof(FIFOData4R.RobotData.command));
 
-    RobotDataLen = RobotData4R.dataLen - ROBOT_DATA_PRIV_OFFSET + 1;
-    memcpy(RobotData4R.priv, buf + ROBOT_DATA_PRIV_OFFSET, RobotDataLen);
+    RobotDataLen = FIFOData4R.dataLen - ROBOT_DATA_PRIV_OFFSET + 1;         // 2 
+    memcpy(FIFOData4R.RobotData.priv, buf + ROBOT_DATA_PRIV_OFFSET, RobotDataLen);
 
     return 0;
 }
 
-static int RobotData2DataBuf(struct RobotData RobotData)
+static int FIFOData2DataBuf(struct FIFOData FIFOData)
 {
-    memcpy(DataBuffer4W + ROBOT_DATA_LENF_OFFSET, &RobotData.dataLen, sizeof(RobotData.dataLen));
-    memcpy(DataBuffer4W + ROBOT_DATA_SRCF_OFFSET, &RobotData.sourceFlag, sizeof(RobotData.sourceFlag));
-    memcpy(DataBuffer4W + ROBOT_DATA_COMM_OFFSET, &RobotData.command, sizeof(RobotData.command));
-    memcpy(DataBuffer4W + ROBOT_DATA_PRIV_OFFSET, RobotData.priv, strlen(RobotData.priv));
+    memcpy(DataBuffer4W + ROBOT_DATA_LENF_OFFSET, &FIFOData.dataLen, sizeof(FIFOData.dataLen));
+    memcpy(DataBuffer4W + ROBOT_DATA_SRCF_OFFSET, &FIFOData.sourceFlag, sizeof(FIFOData.sourceFlag));
+    memcpy(DataBuffer4W + ROBOT_DATA_COMM_OFFSET, &FIFOData.RobotData.command, 
+            sizeof(FIFOData.RobotData.command));
+    memcpy(DataBuffer4W + ROBOT_DATA_PRIV_OFFSET, FIFOData.RobotData.priv, 
+            strlen(FIFOData.RobotData.priv));
 
     return 0;
 }
 
-static int DataTransfer2LCD()
+static int DataTransfer2LCD(struct RobotData RobotData)
 {
     char *toLCD;
     int dataLen;
 
-    dataLen = sizeof(RobotData4R.command)+ RobotData4R.dataLen - ROBOT_DATA_PRIV_OFFSET + 1;
+    dataLen = sizeof(RobotData.command) + strlen(RobotData.priv);
     toLCD = (char *)malloc(dataLen);
     memset(toLCD, 0, dataLen);
 
-    memcpy(toLCD, RobotData4R.command, sizeof(RobotData4R.command));
-    memcpy(toLCD + 8, RobotData4R.priv, RobotData4R.dataLen - ROBOT_DATA_PRIV_OFFSET + 1);
+    memcpy(toLCD, RobotData.command, sizeof(RobotData.command));
+    memcpy(toLCD + sizeof(RobotData.command), RobotData.priv, strlen(RobotData.priv));
 //send data to frontend
     send(client_sockfd, toLCD, dataLen, 0);
 
@@ -84,17 +86,16 @@ static int DataRecieveFromLCD()
 
     FromLCD = (char *)malloc(ROBOT_DATA_MAX_LEN);
     memset(FromLCD, 0, ROBOT_DATA_MAX_LEN);
-    recv(client_sockfd, FromLCD, 0, 0);
+    recv(client_sockfd, FromLCD, ROBOT_DATA_MAX_LEN, 0);
 
-    memcpy(RobotData4W.command, FromLCD, 8);
-    memcpy(RobotData4W.priv, FromLCD + 8, ROBOT_DATA_MAX_LEN - 10);
+    memcpy(FIFOData4W.RobotData.command, FromLCD, sizeof(FIFOData4W.RobotData.command));
+    memcpy(FIFOData4W.RobotData.priv, FromLCD + sizeof(FIFOData4W.RobotData.command), ROBOT_DATA_MAX_LEN - 10);
 
-    dataLen = strlen(RobotData4W.priv);
+    dataLen = strlen(FIFOData4W.RobotData.priv);
 
-    RobotData4W.dataLen = sizeof(RobotData4W.dataLen) + sizeof(RobotData4W.command) + 
-                sizeof(RobotData4W.sourceFlag) + dataLen;
+    FIFOData4W.dataLen = sizeof(FIFOData4W.sourceFlag) + sizeof(FIFOData4W.RobotData.command) + dataLen;
 
-    RobotData2DataBuf(RobotData4W);
+    FIFOData2DataBuf(FIFOData4W);
 
     free(FromLCD);
 
@@ -104,7 +105,7 @@ static int DataRecieveFromLCD()
 void FIFOReadThread()
 {
     int ret;
-    int num = sizeof(RobotData4R);
+    int num = sizeof(DataBuffer4R);
     do
     {
         ret = read_p(fd_read, DataBuffer4R, num);
@@ -114,14 +115,14 @@ void FIFOReadThread()
             continue;
         }
 
-        ret = DataBuf2RobotData(DataBuffer4R);
+        ret = DataBuf2FIFOData(DataBuffer4R);
         if (0 != ret)
         {
-            printf("%s: DataBuf2RobotData error!!\n", __FILE__);
+            printf("%s: DataBuf2FIFOData error!!\n", __FILE__);
             exit(-1);
         }
 
-        ret = DataTransfer2LCD();
+        ret = DataTransfer2LCD(FIFOData4R.RobotData);
         if (0 != ret)
         {
             printf("%s: DataTransfer error!!\n", __FILE__);
@@ -267,11 +268,11 @@ int EnvIinit()
         return -1;
     }
 
-    RobotData4R.priv = (char *)malloc(ROBOT_PRIV_LEN);
-    memset(RobotData4R.priv, 0 , ROBOT_PRIV_LEN);
+    FIFOData4R.RobotData.priv= (char *)malloc(ROBOT_PRIV_LEN);
+    memset(FIFOData4R.RobotData.priv, 0 , ROBOT_PRIV_LEN);
 
-    RobotData4W.priv = (char *)malloc(ROBOT_PRIV_LEN);
-    memset(RobotData4W.priv, 0 , ROBOT_PRIV_LEN);
+    FIFOData4W.RobotData.priv= (char *)malloc(ROBOT_PRIV_LEN);
+    memset(FIFOData4W.RobotData.priv, 0 , ROBOT_PRIV_LEN);
 
     return 0;
 }
@@ -281,8 +282,8 @@ void EnvDeIinit()
     FIFOEnvDeInit();
     SocketEnvDeInit();
 
-    free(RobotData4R.priv);
-    free(RobotData4W.priv);
+    free(FIFOData4R.RobotData.priv);
+    free(FIFOData4R.RobotData.priv);
 }
 
 
@@ -298,5 +299,8 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    EnvDeIinit();
+
+    printf("exit!!!!!!!!!\n");
     return 0;
 }
