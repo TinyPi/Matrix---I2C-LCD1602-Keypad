@@ -15,9 +15,10 @@ LIBSRC	+= $(wildcard *.h)
 
 $(LIB): $(LIBSRC)
 	$(CC) $(LDFLAGS) -shared -o $@ $^
+	find . -name "*.so" -exec cp {} ../../../lib/cktlib/ \;
 
 install:
-	install --mode=644 libutils.so $(INSTALLDIR)/lib
+	#install --mode=644 libutils.so $(INSTALLDIR)/lib
 
 clean:
 	rm -rf $(LIB)

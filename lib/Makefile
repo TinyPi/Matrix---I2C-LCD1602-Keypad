@@ -1,4 +1,4 @@
-CROSS_COMPILE ?=
+OSS_COMPILE ?=
 ifeq ($(CROSS_COMPILE),)
 $(error "Not set CROSS_COMPILE=";)
 endif
@@ -46,6 +46,7 @@ install: $(LIB)
 	install ./includes/libfahw*.h $(INSTALLDIR)/include
 	install --mode=644 libfahw.so $(INSTALLDIR)/lib
 	install --mode=644 libfahw.a $(INSTALLDIR)/lib
-	install --mode=664 ./cktlib/*.so $(INSTALLDIR)/lib
+	install --mode=644 cktlib/* $(INSTALLDIR)/lib
+
 clean:
-	rm -rf $(LIB) $(LIBOBJ) $(SLIB) $(DEPS) $(OBJDIR) $(DEPDIR)
+	rm -rf $(LIB) $(LIBOBJ) $(SLIB) $(DEPS) $(OBJDIR) $(DEPDIR) cktlib/*

@@ -11,6 +11,9 @@ SRC 	+= $(wildcard *.h)
 $(TARGET):$(SRC)
 	$(CC) -o $@ $(CFLAGS) $^ ./lib/libfahw.a  -lm -lpthread -Wall 
 
-.PHONY: clean 
+.PHONY: clean install 
 clean:
 	rm -f $(TARGET)
+
+install:
+	install --mode=755 $(TARGET) $(INSTALLDIR)/usr/bin

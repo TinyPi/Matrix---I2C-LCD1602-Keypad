@@ -13,3 +13,6 @@ $(TARGET):$(SRC)
 .PHONY: clean 
 clean:
 	rm -f $(TARGET)
+
+install:
+	install --mode=755 $(TARGET) $(INSTALLDIR)/usr/bin

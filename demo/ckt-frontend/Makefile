@@ -24,4 +24,5 @@ clean:
 	cd $(SUBDIRS);$(MAKE) clean
 
 install:
+	install --mode=755 $(TARGET) $(INSTALLDIR)/usr/bin
 	cd $(SUBDIRS); $(MAKE) install

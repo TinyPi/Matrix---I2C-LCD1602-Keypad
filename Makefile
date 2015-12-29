@@ -2,7 +2,6 @@ CROSS_COMPILE =
 ifeq ($(CROSS_COMPILE),)
 $(error "Not set CROSS_COMPILE=";)
 endif
-
 AS			= $(CROSS_COMPILE)as
 LD			= $(CROSS_COMPILE)ld
 CC			= $(CROSS_COMPILE)gcc
@@ -15,13 +14,14 @@ RANLIB		= $(CROSS_COMPILE)ranlib
 
 export AS LD CC AR NM STRIP OBJCOPY OBJDUMP RANLIB CROSS_COMPILE
 
-INSTALLDIR	= $(shell pwd)/install
-SUBDIRS		= lib \
-		demo 
+TOPDIR		= $(shell pwd)
+INSTALLDIR	= $(TOPDIR)/install
+SUBDIRS		= lib\
+		demo
 TARGET		= subdirs
 PHONY		+= $(TARGET) $(SUBDIRS) %.clean
 
-export INSTALLDIR
+export INSTALLDIR TOPDIR
 
 all: $(TARGET)
 
@@ -31,14 +31,18 @@ $(SUBDIRS):
 	$(MAKE) -C $@
 
 %.clean:
-	@rm -rf $(INSTALLDIR)
+	rm -rf $(INSTALLDIR)
 	@(cd $(patsubst %.clean, %, $@) && $(MAKE) clean)
 
 clean distclean: $(patsubst %, %.clean, $(SUBDIRS))
 
 install:
-	rm -rf $(INSTALLDIR)
+	rm -fr $(INSTALLDIR)
+	mkdir -p $(INSTALLDIR)/usr/bin
 	make -C ./demo install 
 	make -C ./lib install
+	#(cd $(patsubst %.install, %, $@) && $(MAKE) install)
+
+#install: $(patsubst %, %.install, $(SUBDIRS))
 
 .PHONY: $(PHONY) install clean distclean
