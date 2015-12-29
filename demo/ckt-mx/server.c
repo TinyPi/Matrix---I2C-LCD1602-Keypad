@@ -8,12 +8,10 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include "inf_server.h"
-
+#include <pthread.h>
 
 #define MYPORT 8088    // the port users will be connecting to
-
 #define BACKLOG 128     // how many pending connections queue will hold
-
 #define BUF_SIZE 512
 
 int fd_A[BACKLOG];    // accepted connection fd
@@ -53,13 +51,14 @@ int CALL_BACK(int client_id, char *buf, unsigned int size)
 	return 0;	
 }
 
-int server_init(void)
+void *thread_listen_socket(void *arg)
 {
 	int sock_fd, new_fd;  // listen on sock_fd, new connection on new_fd
 	struct sockaddr_in server_addr;    // server address information
 	struct sockaddr_in client_addr; // connector's address information
 	socklen_t sin_size;
 	int yes = 1;
+	pthread_t thread_good;
 	char buf[BUF_SIZE];
 	int ret;
 	int i;
@@ -90,6 +89,7 @@ int server_init(void)
 	}
 
 	printf("listen port %d\n", MYPORT);
+
 
 	fd_set fdsr;
 	int maxsock;
@@ -177,15 +177,17 @@ int server_init(void)
 		//showclient();
 	}
 
-	// close other connections
-	for (i = 0; i < BACKLOG; i++) 
-	{
-		if (fd_A[i] != 0) {
-			close(fd_A[i]);
-		}
-	}
 
-	exit(0);
+}
+
+
+pthread_t server_init(void)
+{
+	pthread_t thread_good;
+	pthread_create(&thread_good, NULL, thread_listen_socket, NULL);
+	
+
+	return thread_good;
 }
 
 

@@ -1,4 +1,4 @@
-CROSS_COMPILE =
+CROSS_COMPILE = arm-linux-
 ifeq ($(CROSS_COMPILE),)
 $(error "Not set CROSS_COMPILE=";)
 endif

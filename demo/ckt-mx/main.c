@@ -18,11 +18,12 @@ int main(int argc, char **argv)
 
     //pthread_t id_read,id_write;
     pthread_t id_read;
-    int ret;
+    pthread_t server_thread;
+	int ret;
     //void *recycle; 
 
     printf("welcome ! this is server routine\r\n");
-    server_init();
+    server_thread = server_init();
 
     //pthread_mutex_init(&lock, NULL);
     //pthread_cond_init(&notempty, NULL);
@@ -43,6 +44,8 @@ int main(int argc, char **argv)
     //}
 
     pthread_join(id_read,NULL); //recycle resource
+    pthread_join(server_thread, NULL); //recycle resource
     //pthread_join(id_write,&recycle);
+    
     return 0;
 }
