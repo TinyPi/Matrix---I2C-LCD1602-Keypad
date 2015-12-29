@@ -14,14 +14,17 @@
 
 #define FIFO_READ_NAME "/temp/fifo/fifo_1"
 #define FIFO_WRITE_NAME "/temp/fifo/fifo_2"
-#define ROBOT_DATA_MAX_LEN 256
+
 
 static int fd_read, fd_write;
 static int client_sockfd;
 static pthread_t ReadId, WriteId;
-static char DataBuffer[256];
+static char DataBuffer4R[256];
+static char DataBuffer4W[256];
 
-static struct RobotData RobotData;
+static struct RobotData RobotData4R;
+static struct RobotData RobotData4W;
+
 
 void signalFIFO(int signal)
 {
@@ -32,34 +35,68 @@ void signalFIFO(int signal)
     }
 }
 
-static int DataTransfer()
+static int DataBuf2RobotData(char *buf)
 {
-    send(client_sockfd, RobotData.command, strlen(RobotData.command), 0);
+    int RobotDataLen = 0;
+
+    memcpy(&RobotData4R.dataLen, buf + ROBOT_DATA_LENF_OFFSET, sizeof(RobotData4R.dataLen));
+    memcpy(&RobotData4R.sourceFlag, buf + ROBOT_DATA_SRCF_OFFSET, sizeof(RobotData4R.sourceFlag));
+    memcpy(&RobotData4R.command, buf + ROBOT_DATA_COMM_OFFSET, sizeof(RobotData4R.command));
+
+    RobotDataLen = RobotData4R.dataLen - ROBOT_DATA_PRIV_OFFSET + 1;
+    memcpy(RobotData4R.priv, buf + ROBOT_DATA_PRIV_OFFSET, RobotDataLen);
 
     return 0;
 }
 
-static int DataAnalysis(char *buf)
+static int RobotData2DataBuf(struct RobotData RobotData)
 {
-    int len = 0, i = 0;
+    memcpy(DataBuffer4W + ROBOT_DATA_LENF_OFFSET, &RobotData.dataLen, sizeof(RobotData.dataLen));
+    memcpy(DataBuffer4W + ROBOT_DATA_SRCF_OFFSET, &RobotData.sourceFlag, sizeof(RobotData.sourceFlag));
+    memcpy(DataBuffer4W + ROBOT_DATA_COMM_OFFSET, &RobotData.command, sizeof(RobotData.command));
+    memcpy(DataBuffer4W + ROBOT_DATA_PRIV_OFFSET, RobotData.priv, strlen(RobotData.priv));
 
-    len = buf[0];
-    memcpy(RobotData.command, buf + 1, 8);
+    return 0;
+}
 
-    if(0 == strlen(RobotData.command))
-    {
-        printf("command length error!!!!!\n");
-        return -1;
-    }
-    printf("Robot command is:");
-    for(; '\0' != RobotData.command[i]; ++i)
-    {
-        printf("%c", RobotData.command[i]);
-    }
-    printf("\n");
+static int DataTransfer2LCD()
+{
+    char *toLCD;
+    int dataLen;
 
-//1 DATA TBD
-    RobotData.priv= (char *) (buf + (len - 8 - 1));
+    dataLen = sizeof(RobotData4R.command)+ RobotData4R.dataLen - ROBOT_DATA_PRIV_OFFSET + 1;
+    toLCD = (char *)malloc(dataLen);
+    memset(toLCD, 0, dataLen);
+
+    memcpy(toLCD, RobotData4R.command, sizeof(RobotData4R.command));
+    memcpy(toLCD + 8, RobotData4R.priv, RobotData4R.dataLen - ROBOT_DATA_PRIV_OFFSET + 1);
+//send data to frontend
+    send(client_sockfd, toLCD, dataLen, 0);
+
+    free(toLCD);
+    return 0;
+}
+
+static int DataRecieveFromLCD()
+{
+    char *FromLCD;
+    int dataLen;
+
+    FromLCD = (char *)malloc(ROBOT_DATA_MAX_LEN);
+    memset(FromLCD, 0, ROBOT_DATA_MAX_LEN);
+    recv(client_sockfd, FromLCD, 0, 0);
+
+    memcpy(RobotData4W.command, FromLCD, 8);
+    memcpy(RobotData4W.priv, FromLCD + 8, ROBOT_DATA_MAX_LEN - 10);
+
+    dataLen = strlen(RobotData4W.priv);
+
+    RobotData4W.dataLen = sizeof(RobotData4W.dataLen) + sizeof(RobotData4W.command) + 
+                sizeof(RobotData4W.sourceFlag) + dataLen;
+
+    RobotData2DataBuf(RobotData4W);
+
+    free(FromLCD);
 
     return 0;
 }
@@ -67,37 +104,55 @@ static int DataAnalysis(char *buf)
 void FIFOReadThread()
 {
     int ret;
-    int num = sizeof(DataBuffer);
+    int num = sizeof(RobotData4R);
     do
     {
-        ret = read_p(fd_read, DataBuffer, num);
-        if(0 != ret)
+        ret = read_p(fd_read, DataBuffer4R, num);
+        if(0 > ret)
         {
             printf("fifo read error!!!!!\n");
             continue;
         }
 
-        ret = DataAnalysis(DataBuffer);
+        ret = DataBuf2RobotData(DataBuffer4R);
         if (0 != ret)
         {
-            printf("%s: DataAnalysis error!!\n", __FILE__);
+            printf("%s: DataBuf2RobotData error!!\n", __FILE__);
             exit(-1);
         }
 
-        ret = DataTransfer();
+        ret = DataTransfer2LCD();
         if (0 != ret)
         {
             printf("%s: DataTransfer error!!\n", __FILE__);
             exit(-1);
         }
 
-    }while (-1 == ret);
+    }while (0 != ret);
 
 }
 
 void FIFOWriteThread()
 {
-    //write();
+    int ret = 0;
+
+    do
+    {
+        ret = DataRecieveFromLCD();
+        if (0 != ret)
+        {
+            printf("%s: Data recieve for LCD error!!\n", __FILE__);
+            exit(-1);
+        }
+
+        ret = write_p(fd_write, DataBuffer4W, sizeof(DataBuffer4W));
+        if(0 > ret)
+        {
+            printf("%s: fifo write error!!\n", __FILE__);
+            exit(-1);
+        }
+    }while (0 != ret);
+
 }
 
 int FIFOEnvInit()
@@ -199,12 +254,8 @@ void SocketEnvDeInit()
     close(client_sockfd);
 }
 
-int main(int argc, char *argv[])
+int EnvIinit()
 {
-//dont exit this process when read the fifo but there is not any write port 
-// on it
-    signal(SIGPIPE, signalFIFO);
-
     if (-1 == FIFOEnvInit())
     {
         printf("FIFO environment init error!\n");
@@ -216,7 +267,36 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    RobotData4R.priv = (char *)malloc(ROBOT_PRIV_LEN);
+    memset(RobotData4R.priv, 0 , ROBOT_PRIV_LEN);
+
+    RobotData4W.priv = (char *)malloc(ROBOT_PRIV_LEN);
+    memset(RobotData4W.priv, 0 , ROBOT_PRIV_LEN);
+
+    return 0;
+}
+
+void EnvDeIinit()
+{
     FIFOEnvDeInit();
     SocketEnvDeInit();
+
+    free(RobotData4R.priv);
+    free(RobotData4W.priv);
+}
+
+
+int main(int argc, char *argv[])
+{
+//dont exit this process when read the fifo but there is not any write port 
+// on it
+    signal(SIGPIPE, signalFIFO);
+
+    if (0 > EnvIinit())
+    {
+        printf("Envinit error!\n");
+        return -1;
+    }
+
     return 0;
 }
