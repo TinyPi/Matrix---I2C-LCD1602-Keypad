@@ -12,8 +12,8 @@
 #include "fifo_p.h"
 #include "ckt_analysis.h"
 
-#define FIFO_READ_NAME "/temp/fifo/fifo_1"
-#define FIFO_WRITE_NAME "/temp/fifo/fifo_2"
+#define FIFO_READ_NAME "/tmp/fifo_1"
+#define FIFO_WRITE_NAME "/tmp/fifo_2"
 
 
 static int fd_read, fd_write;
