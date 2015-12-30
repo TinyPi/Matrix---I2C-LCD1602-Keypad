@@ -22,7 +22,7 @@ int pack_and_send(char *buf, unsigned int size)
 {
 	char buf_tmp[256];
 	unsigned char client_id = buf[1];
-	unsigned int  buf_sise = (unsigned int)buf[0];
+	unsigned int  buf_size = (unsigned int)buf[0];
 	
 	if (buf_size > 256)
 	   return -1;
