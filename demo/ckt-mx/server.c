@@ -9,9 +9,10 @@
 #include <arpa/inet.h>
 #include "inf_server.h"
 #include <pthread.h>
+#ifndef DDD
 #include "fifo_p.h"
 #include "fifo_thread.h"
-
+#endif
 
 
 #define MYPORT 8088    // the port users will be connecting to
@@ -20,6 +21,16 @@
 
 int fd_A[BACKLOG];    // accepted connection fd
 int conn_amount;    // current connection amount
+
+
+void print_hex(char *buf, int sz)
+{
+	int idx;
+
+	for (idx=0; idx<sz; idx ++)
+		printf("%x ", buf[idx]);
+	printf("\r\n");
+}
 
 
 int pack_and_send(char *buf, unsigned int size)
@@ -46,11 +57,10 @@ int pack_and_send(char *buf, unsigned int size)
 void parse(char client_id, char *buf, unsigned int size)
 {
 	
-	if (buf[0] != 0x86)
+	if ( (buf[0]&0xff) != (unsigned char)0x86)
 	{
 	   printf("pkt has wrong\r\n");	
 	}
-
 #if 0
 	pkt->CLIENT_ID = client_id;
 	pkt->START_TOKEN = buf[0];
@@ -64,21 +74,16 @@ void parse(char client_id, char *buf, unsigned int size)
 	dst_buf[0] = buf[1]; // length;
 	dst_buf[1] = client_id;
         memcpy((void *)&dst_buf[2], &buf[2], len);
-  	write_to_fifo(WRITE_FIFO, dst_buf, len);
-}
-
-void print_hex(char *buf, int sz)
-{
-	int idx;
-
-	for (idx=0; idx<sz; idx ++)
-		printf("%x ", buf[idx]);
-	printf("\r\n");
+#ifndef DDD 	
+	write_to_fifo(WRITE_FIFO, dst_buf, len);
+#endif
+	printf("dst_buf, rcv=%d\r\n", size);
+	print_hex(dst_buf, len);
 }
 
 int CALL_BACK(int client_id, char *buf, unsigned int size)
 {	
-	PASER_t pkt;
+	//PASER_t pkt;
 	
 	print_hex(buf, size);
 
@@ -212,8 +217,7 @@ void *thread_listen_socket(void *arg)
 		}
 		//showclient();
 	}
-
-
+	return NULL;
 }
 
 
@@ -221,12 +225,17 @@ pthread_t server_init(void)
 {
 	pthread_t thread_good;
 	pthread_create(&thread_good, NULL, thread_listen_socket, NULL);
-	
-
 	return thread_good;
 }
 
 
-
+#ifdef DDD
+// use test routine: input cc server.c -DDDD -lpthread
+void main(int argc, char **argv)
+{
+     pthread_t id = server_init();
+     pthread_join(id, NULL);
+}
+#endif
 
 
