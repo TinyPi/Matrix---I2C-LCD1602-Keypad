@@ -35,21 +35,19 @@ void print_hex(char *buf, int sz)
 
 int pack_and_send(char *buf, unsigned int size)
 {
-	char buf_tmp[256];
+	char buf_tmp[512];
 	unsigned char client_id = buf[1];
 	unsigned int  buf_size = (unsigned int)buf[0];
 	
-	if (buf_size > 256)
+	if (buf_size > 512)
 	   return -1;
 	
 	buf_tmp[0] = 0x86;
         buf_tmp[1] = buf_size;
         memcpy((void *)&buf_tmp[2], (void *)&buf[2], buf_size);
-        buf_tmp[buf_size+2] = 0x68;
-	
+        buf_tmp[buf_size+2-1] = 0x68;
 	send(fd_A[client_id], buf_tmp, buf_size+2, 0);
 	printf("%s, send buf size=%d\r\n", buf_tmp, buf_size+2);
-
 	return 0;
 }
 
@@ -57,38 +55,46 @@ int pack_and_send(char *buf, unsigned int size)
 void parse(char client_id, char *buf, unsigned int size)
 {
 	
+	char dst_buf[512];
+	unsigned int len = 0;
 	if ( (buf[0]&0xff) != (unsigned char)0x86)
 	{
 	   printf("pkt has wrong\r\n");	
 	}
-#if 0
-	pkt->CLIENT_ID = client_id;
-	pkt->START_TOKEN = buf[0];
-	pkt->CMD_LENGTH = buf[1];
-	memcpy((void *)pkt->pBUF, (void *)&buf[2], pkt->CMD_LENGTH);
-	pkt->END_TOKEN = buf[size-1];
-	pkt->SOCKET_FD = fd_A[client_id];
-#endif
-	char dst_buf[512];
-	unsigned int len = buf[1] + 2;
 	dst_buf[0] = buf[1]; // length;
 	dst_buf[1] = client_id;
+	len = (0xff & buf[1]);
         memcpy((void *)&dst_buf[2], &buf[2], len);
 #ifndef DDD 	
-	write_to_fifo(WRITE_FIFO, dst_buf, len);
+	write_to_fifo(WRITE_FIFO, dst_buf, len+2);
 #endif
 	printf("dst_buf, rcv=%d\r\n", size);
-	print_hex(dst_buf, len);
+	print_hex(buf, size);
 }
 
+static unsigned char gbuf[512];
+static unsigned int  gcount = 0;
 int CALL_BACK(int client_id, char *buf, unsigned int size)
 {	
-	//PASER_t pkt;
+        static unsigned int locker = 0;	
+	//print_hex(buf, size);
+	printf("%x====%d\r\n", buf[0], size);
 	
-	print_hex(buf, size);
+	if ((buf[0]&0xff) == 0x86 && locker == 0)
+	{
+	   locker = 1;
+	}	
 
-	parse(client_id, buf, size);
-	//call send_fifo 
+        if (locker == 1)
+	{
+	   gbuf[gcount ++] = buf[0];   
+	   if ((buf[0]&0xff) == 0x68)
+	   {
+              locker = 0;
+	      parse(client_id, gbuf, gcount);
+	      gcount = 0;
+	   }
+	}
 	return 0;	
 }
 
@@ -171,7 +177,7 @@ void *thread_listen_socket(void *arg)
 		{
 			if (FD_ISSET(fd_A[i], &fdsr)) 
 			{
-				ret = recv(fd_A[i], buf, sizeof(buf), 0);
+				ret = recv(fd_A[i], buf, 1, 0);
 				if (ret <= 0) 
 				{        // client close
 					printf("client[%d] close\n", i);
