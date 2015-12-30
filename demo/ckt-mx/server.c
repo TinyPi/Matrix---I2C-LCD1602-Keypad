@@ -36,7 +36,7 @@ int pack_and_send(char *buf, unsigned int size)
         buf_tmp[buf_size+2] = 0x68;
 	
 	send(fd_A[client_id], buf_tmp, buf_size+2, 0);
-	printf("%s, send buf size=%d\r\n", buf_size+2);
+	printf("%s, send buf size=%d\r\n", buf_tmp, buf_size+2);
 
 	return 0;
 }
@@ -61,7 +61,9 @@ void parse(int client_id, char *buf, unsigned int size, PASER_t *pkt)
 
 void print_hex(char *buf, int sz)
 {
-	for (int idx=0; idx<sz; idx ++)
+	int idx;
+
+	for (idx=0; idx<sz; idx ++)
 		printf("%x ", buf[idx]);
 	printf("\r\n");
 }
