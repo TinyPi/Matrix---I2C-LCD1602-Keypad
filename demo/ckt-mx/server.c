@@ -20,13 +20,21 @@ int conn_amount;    // current connection amount
 
 int pack_and_send(char *buf, unsigned int size)
 {
-#if 0
-	pkt->CLIENT_ID = client_id;
-	pkt->START_TOKEN = 0x86;
-	pkt->CMD_LENGTH = size;
-	memcpy((void *)pkt->pBUF, (void *)buf, pkt->CMD_LENGTH);
-	pkt->END_TOKEN = 0x68;
-#endif
+	char buf_tmp[256];
+	unsigned char client_id = buf[1];
+	unsigned int  buf_sise = (unsigned int)buf[0];
+	
+	if (buf_size > 256)
+	   return -1;
+	
+	buf_tmp[0] = 0x86;
+        buf_tmp[1] = buf_size;
+        memcpy((void *)&buf_tmp[2], (void *)&buf[2], buf_size);
+        buf_tmp[buf_size+2] = 0x68;
+	
+	send(fd_A[client_id], buf_tmp, buf_size+2, 0);
+	printf("%s, send buf size=%d\r\n", buf_size+2);
+
 	return 0;
 }
 
@@ -47,7 +55,8 @@ int CALL_BACK(int client_id, char *buf, unsigned int size)
 	PASER_t pkt;
 	parse(client_id, buf, size, &pkt);
 	//call send_fifo 
-		
+        send(fd_A[client_id], buf, size, 0);	
+        	
 	return 0;	
 }
 
@@ -169,7 +178,7 @@ void *thread_listen_socket(void *arg)
 			else 
 			{
 				printf("max connections arrive, exit\n");
-				send(new_fd, "bye", 4, 0);
+				//send(new_fd, "bye", 4, 0);
 				close(new_fd);
 				break;
 			}
