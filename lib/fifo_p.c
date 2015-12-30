@@ -11,18 +11,17 @@ int __read_pthread(const char *filename)
    int fd, rc;
 
    if(access(filename,F_OK) != 0) {
-    if((mkfifo(filename,666)<0) && (errno != EEXIST)) {
-      printf("Can NOT create fifo file!\n");
+    if((mkfifo(filename,0666)<0) && (errno != EEXIST)) {
+      printf("Can NOT create fifo file %s,errno %d\n", filename, errno);
       return -1;
      }
    }
    if((fd=open(filename,O_RDONLY)) == -1) {
-      printf("Open fifo error!\n");
+      printf("Open fifo %s error!\n", filename);
       return -1;
     }
 
    do {
-   //pthread_mutex_lock(&lock);
 
    //read buff
    	memset(fifo_read, 0, sizeof(fifo_read));
@@ -61,13 +60,13 @@ int write_to_fifo(const char *filename, char *buf, unsigned int len)
    int fd,rc;
 
    if(access(filename,F_OK) != 0) {
-    if((mkfifo(filename,666)<0) && (errno != EEXIST)) {
-       printf("Can NOT create fifo file!\n");
+    if((mkfifo(filename,0666)<0) && (errno != EEXIST)) {
+      printf("Can NOT create fifo file %s,errno %d\n", filename, errno);
       return -1;
      }
    }
    if((fd=open(filename,O_WRONLY)) == -1) {
-      printf("Open fifo error!\n");
+      printf("Open fifo %s error!\n", filename);
       return -1;
      }
 

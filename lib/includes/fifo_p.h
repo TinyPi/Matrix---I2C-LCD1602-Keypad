@@ -11,8 +11,8 @@
 #define _FIFO_P_
 
 #define BUFF_SIZE 512
-#define READ_FIFO  "/temp/fifo/fifo_2"
-#define WRITE_FIFO "/temp/fifo/fifo_1"
+#define READ_FIFO  "/tmp/fifo_2"
+#define WRITE_FIFO "/tmp/fifo_1"
 
 char fifo_read[BUFF_SIZE];
 

@@ -25,27 +25,14 @@ int main(int argc, char **argv)
     printf("welcome ! this is server routine\r\n");
     server_thread = server_init();
 
-    //pthread_mutex_init(&lock, NULL);
-    //pthread_cond_init(&notempty, NULL);
-    //pthread_cond_init(&notfull, NULL);
-    //readpos = 0;
-    //writepos = 0;
-
     ret = pthread_create(&id_read,NULL,(void *)read_pthread,NULL);
     if(ret != 0){
     printf ("Create pthread error!\n");
     exit (1);
     }
 
-    //ret = pthread_create(&id_write, NULL, write_pthread, NULL);
-    //if(ret != 0){
-    //printf ("Create pthread error!\n");
-    //exit (1);
-    //}
-
     pthread_join(id_read,NULL); //recycle resource
     pthread_join(server_thread, NULL); //recycle resource
-    //pthread_join(id_write,&recycle);
     
     return 0;
 }
