@@ -83,7 +83,7 @@ int write_to_fifo(const char *filename, char *buf, unsigned int len)
    	printf("write fifo failed,rc %d\n", rc);
    //writepos--;
    //pthread_mutex_unlock(&lock);
-   
+   printf("write fifo: %s \n", buf);
    //}
    //close (fd) ;
    //pthread_exit(0);

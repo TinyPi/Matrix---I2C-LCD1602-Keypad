@@ -10,6 +10,7 @@
 #include "inf_server.h"
 #include <pthread.h>
 #include "fifo_p.h"
+#include "fifo_thread.h"
 
 
 
@@ -76,8 +77,8 @@ int CALL_BACK(int client_id, char *buf, unsigned int size)
 
 	parse(client_id, buf, size, &pkt);
 	//call send_fifo 
-        send(fd_A[client_id], buf, size, 0);	
-        	
+  //send(fd_A[client_id], buf, size, 0);	
+  write_to_fifo(WRITE_FIFO, buf, (unsigned int)size);
 	return 0;	
 }
 
