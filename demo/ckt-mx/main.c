@@ -9,7 +9,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 
-#include "fifo_p.h"
+#include "fifo_thread.h"
 
 extern int server_init();
 

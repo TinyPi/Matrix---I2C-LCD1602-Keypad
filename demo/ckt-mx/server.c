@@ -86,7 +86,7 @@ void *thread_listen_socket(void *arg)
 	struct sockaddr_in client_addr; // connector's address information
 	socklen_t sin_size;
 	int yes = 1;
-	pthread_t thread_good;
+	//pthread_t thread_good;
 	char buf[BUF_SIZE];
 	int ret;
 	int i;
