@@ -43,7 +43,7 @@ int pack_and_send(char *buf, unsigned int size)
 }
 
 
-void parse(int client_id, char *buf, unsigned int size, PASER_t *pkt)
+void parse(char client_id, char *buf, unsigned int size)
 {
 	
 	if (buf[0] != 0x86)
@@ -51,13 +51,20 @@ void parse(int client_id, char *buf, unsigned int size, PASER_t *pkt)
 	   printf("pkt has wrong\r\n");	
 	}
 
-
+#if 0
 	pkt->CLIENT_ID = client_id;
 	pkt->START_TOKEN = buf[0];
 	pkt->CMD_LENGTH = buf[1];
 	memcpy((void *)pkt->pBUF, (void *)&buf[2], pkt->CMD_LENGTH);
 	pkt->END_TOKEN = buf[size-1];
 	pkt->SOCKET_FD = fd_A[client_id];
+#endif
+	char dst_buf[512];
+	unsigned int len = buf[1] + 2;
+	dst_buf[0] = buf[1]; // length;
+	dst_buf[1] = client_id;
+        memcpy((void *)&dst_buf[2], &buf[2], len);
+  	write_to_fifo(WRITE_FIFO, dst_buf, len);
 }
 
 void print_hex(char *buf, int sz)
@@ -75,10 +82,8 @@ int CALL_BACK(int client_id, char *buf, unsigned int size)
 	
 	print_hex(buf, size);
 
-	parse(client_id, buf, size, &pkt);
+	parse(client_id, buf, size);
 	//call send_fifo 
-  //send(fd_A[client_id], buf, size, 0);	
-  write_to_fifo(WRITE_FIFO, buf, (unsigned int)size);
 	return 0;	
 }
 
