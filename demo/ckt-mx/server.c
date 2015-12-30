@@ -9,6 +9,9 @@
 #include <arpa/inet.h>
 #include "inf_server.h"
 #include <pthread.h>
+#include "fifo_p.h"
+
+
 
 #define MYPORT 8088    // the port users will be connecting to
 #define BACKLOG 128     // how many pending connections queue will hold
@@ -41,6 +44,13 @@ int pack_and_send(char *buf, unsigned int size)
 
 void parse(int client_id, char *buf, unsigned int size, PASER_t *pkt)
 {
+	
+	if (buf[0] != 0x86)
+	{
+	   printf("pkt has wrong\r\n");	
+	}
+
+
 	pkt->CLIENT_ID = client_id;
 	pkt->START_TOKEN = buf[0];
 	pkt->CMD_LENGTH = buf[1];
@@ -49,10 +59,19 @@ void parse(int client_id, char *buf, unsigned int size, PASER_t *pkt)
 	pkt->SOCKET_FD = fd_A[client_id];
 }
 
+void print_hex(char *buf, int sz)
+{
+	for (int idx=0; idx<sz; idx ++)
+		printf("%x ", buf[idx]);
+	printf("\r\n");
+}
 
 int CALL_BACK(int client_id, char *buf, unsigned int size)
 {	
 	PASER_t pkt;
+	
+	print_hex(buf, size);
+
 	parse(client_id, buf, size, &pkt);
 	//call send_fifo 
         send(fd_A[client_id], buf, size, 0);	
