@@ -61,7 +61,7 @@ void parse(char client_id, char *buf, unsigned int size)
 	{
 	   printf("pkt has wrong\r\n");	
 	}
-	dst_buf[0] = buf[1]; // length;
+	dst_buf[0] = buf[1]+1; // length;
 	dst_buf[1] = client_id;
 	len = (0xff & buf[1]);
         memcpy((void *)&dst_buf[2], &buf[2], len);
