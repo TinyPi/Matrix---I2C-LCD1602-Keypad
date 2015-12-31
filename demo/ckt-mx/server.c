@@ -65,7 +65,8 @@ void parse(char client_id, char *buf, unsigned int size)
 	dst_buf[1] = client_id;
 	len = (0xff & buf[1]);
         memcpy((void *)&dst_buf[2], &buf[2], len);
-#ifndef DDD 	
+#ifndef DDD
+  printf("before write to fifo: %s\n", dst_buf);
 	write_to_fifo(WRITE_FIFO, dst_buf, len+2);
 #endif
 	printf("dst_buf, rcv=%d\r\n", size);

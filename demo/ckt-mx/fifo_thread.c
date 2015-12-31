@@ -17,7 +17,7 @@ int __read_pthread(const char *filename)
 			return -1;
 		}
 	}
-	if((fd=open(filename,O_RDONLY)) == -1) {
+	if((fd=open(filename,O_RDWR)) == -1) {
 		printf("Open fifo %s error!\n", filename);
 		return -1;
 	}
@@ -66,16 +66,16 @@ int write_to_fifo(const char *filename, char *buf, unsigned int len)
 			return -1;
 		}
 	}
-	if((fd=open(filename,O_WRONLY)) == -1) {
+	if((fd=open(filename,O_RDWR)) == -1) {
 		printf("Open fifo %s error!\n", filename);
 		return -1;
 	}
-
 	//while (1) {
 	//pthread_mutex_lock(&lock);
 
 	//if (writepos == 0)
 	//pthread_cond_wait(&notfull, &lock);
+  printf("write_to_fifo, [buf]: %s\n", buf);
 
 	// write data
 	rc = write_p(fd, buf,len);
@@ -83,7 +83,6 @@ int write_to_fifo(const char *filename, char *buf, unsigned int len)
 		printf("write fifo failed,rc %d\n", rc);
 	//writepos--;
 	//pthread_mutex_unlock(&lock);
-	printf("write fifo: %s \n", buf);
 	//}
 	//close (fd) ;
 	//pthread_exit(0);
