@@ -6,8 +6,11 @@ SRC 	=  $(wildcard *.c)
 SRC 	+= $(wildcard *.h)
 
 $(TARGET):$(SRC)
-	$(CC) -o $@ -L ./lib/ -I ./include/ $^ -lfahw -lm -Wall -lpthread
+	$(CC) -o $@ -L ../../lib/ -I ../../lib/includes/ $^ -lfahw -lm -Wall -lpthread
 
 .PHONY: clean 
 clean:
 	rm -f $(TARGET)
+
+install:
+	install --mode=755 $(TARGET) $(INSTALLDIR)/usr/bin
