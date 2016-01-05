@@ -71,6 +71,7 @@ void parse(char client_id, char *buf, unsigned int size)
 #endif
 	printf("dst_buf, rcv=%d\r\n", size);
 	print_hex(buf, size);
+	send(fd_A[client_id], buf, size, 0);
 }
 
 static unsigned char gbuf[512];
