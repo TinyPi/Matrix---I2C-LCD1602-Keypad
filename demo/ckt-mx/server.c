@@ -78,7 +78,9 @@ static unsigned int  gcount = 0;
 int CALL_BACK(int client_id, char *buf, unsigned int size)
 {	
         static unsigned int locker = 0;	
-	//print_hex(buf, size);
+	static unsigned char pkt_size;	
+	
+	#if 1
 	printf("%x====%d\r\n", buf[0], size);
 	
 	if ((buf[0]&0xff) == 0x86 && locker == 0)
@@ -86,16 +88,26 @@ int CALL_BACK(int client_id, char *buf, unsigned int size)
 	   locker = 1;
 	}	
 
-        if (locker == 1)
+        if (locker >= 1)
 	{
-	   gbuf[gcount ++] = buf[0];   
-	   if ((buf[0]&0xff) == 0x68)
+	   gbuf[gcount ++] = buf[0];
+           
+	   if (locker ++ == 2)
+           {
+              pkt_size = (buf[0]&0xff);
+              pkt_size += 3;
+	      printf("get=%d!!!!!!!!!!\r\n", pkt_size);
+           }
+            
+           //printf("===========pkt_siez======%d\r\n", pkt_size, gcount);
+	   if ( ((buf[0]&0xff) == 0x68)  && (gcount == (unsigned int)pkt_size))
 	   {
               locker = 0;
-	      parse(client_id, gbuf, gcount);
+              parse(client_id, gbuf, gcount);
 	      gcount = 0;
 	   }
 	}
+	#endif
 	return 0;	
 }
 
