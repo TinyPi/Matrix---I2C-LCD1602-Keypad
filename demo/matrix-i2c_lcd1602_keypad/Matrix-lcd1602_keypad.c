@@ -184,7 +184,6 @@ void *KeyThread1()
 		switch (_revcmd)
 		{
 			case 0x1:
-				_revcmd = 0;
 				LCD1602KeyClear(devFD);
 				usleep(1000);
 				LCD1602KeyDispStr(devFD, 0, 1, revbuf+24);
@@ -229,9 +228,12 @@ void *KeyThread1()
         } 
 		else if (showDefault != 1)
 		{
-			pthread_mutex_lock(&mut);
-			revcmd = 0;
-			pthread_mutex_unlock(&mut);
+			if (_revcmd != 0)
+			{
+				pthread_mutex_lock(&mut);
+				revcmd = 0;
+				pthread_mutex_unlock(&mut);
+			}
             continue;
         }
 		
@@ -343,12 +345,17 @@ void *SocketThread2()
 
 		if (server_sockfd > 0 && client_sockfd > 0)
 		{
+			memset(buf, 0, BUFSIZ);
 			/*接收客户端的数据并将其发送给客户端--recv返回接收到的字节数，send返回发送的字节数*/
 			while ((len = recv(client_sockfd, buf, BUFSIZ, 0)) >0 )
 			{
 				buf[len]='\0';
 				mydebug("sever receive: %s\n",buf);
-				
+				if (len > 8)
+				{
+					mydebug("sever receive: %s\n",buf + 8);
+				}
+
 				if (strstr(buf, "DISPLAY"))
 				{
 					_revcmd = 0x01;
