@@ -155,13 +155,13 @@ int SendData2Bg()
 
     printf("%s\n", __func__);
     printf("Write ot FIFO Data is(%d):", *databuff4W);
-    for(; i < *databuff4W; ++i)
+    for(; i <= *databuff4W; ++i)
     {
         printf("[%x]", databuff4W[i]);
     }
     printf("\n");
 
-    ret = write_p(write_fd, databuff4W, *databuff4W);           //The first byte of databuff4W is data length
+    ret = write_p(write_fd, databuff4W, (*databuff4W) + 1);           //The first byte of databuff4W is data length
     if(0 > ret)
     {
         printf("fifo write error!!\n");
