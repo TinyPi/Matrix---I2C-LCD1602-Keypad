@@ -35,7 +35,7 @@ struct LCDData;
 #define BUF_LENF_OFFSET                    (BUF_BEGIN + 0)
 #define BUF_SRCF_OFFSET                     (BUF_LENF_OFFSET + sizeof(char))
 #define BUF_COMM_OFFSET                 (BUF_SRCF_OFFSET + sizeof(char))
-#define BUF_PRIV_OFFSET                 (BUF_COMM_OFFSET + _M_OFFSET(priv, struct RobotData))
+#define BUF_PRIV_OFFSET                 (BUF_COMM_OFFSET + 8)               //8 for 8 bytes command
 
 int FIFOReadEnvInit(void);
 int FIFOWriteEnvInit(void);

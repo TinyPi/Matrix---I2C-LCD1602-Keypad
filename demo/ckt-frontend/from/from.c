@@ -184,8 +184,8 @@ int Buffer2FIFO(struct FIFOData *FIFOData)
     RobotDataLen = FIFOData->dataLen - sizeof(FIFOData->sourceFlag) - NUM(FIFOData->RobotData.command);         // 2 
     memcpy((char *)FIFOData->RobotData.priv, databuff4R + BUF_PRIV_OFFSET, RobotDataLen);
 
-    printf("Robot command offset:%d\n", BUF_COMM_OFFSET);
-    printf("FIFOData->dataLen:%x\n", FIFOData->dataLen);
+    printf("Robot command offset:%d\n", BUF_PRIV_OFFSET);
+    printf("FIFOData->dataLen:%d\n", FIFOData->dataLen);
     printf("FIFOData->sourceFlag:%x\n", FIFOData->sourceFlag);
     printf("FIFOData->RobotData.command:");
     for(; i < NUM(FIFOData->RobotData.command); ++i)
