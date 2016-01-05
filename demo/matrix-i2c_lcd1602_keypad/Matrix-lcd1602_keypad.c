@@ -28,7 +28,7 @@ char revbuf[BUFSIZ] = {0};
 pthread_t thread[2];
 pthread_mutex_t mut;
 
-#define mydebug  printf("nanopi-wz: ");printf
+#define mydebug  printf("\n [nanopi-wz] ");printf
 
 /*
 void LCD1602KeyDispStr(int dev, int x, int y, char *str)
@@ -153,7 +153,7 @@ F1(left)        F4(right)   F5(ok)
 
 void *KeyThread1()
 {
-	mydebug ("KeyThread\n");
+	mydebug("KeyThread\n");
 
     int keyValue = 0;
     int lastKeyValue = -1;
@@ -219,10 +219,10 @@ void *KeyThread1()
 			
 			default:
 				keyValue = LCD1602GetKey(devFD);
+
 			break;
 		}
-		
-        if (keyValue != lastKeyValue) 
+        if ((keyValue != lastKeyValue) && (keyValue != 0x1f)) 
 		{
 			mydebug("current pressed key is %x", keyValue);
             lastKeyValue = keyValue;
@@ -237,7 +237,7 @@ void *KeyThread1()
 		
         switch (keyValue) 
 		{
-            // F1 left
+            // F1 back
         case 0x1e:  // display ip address
 			showDefault = 0;
 			LCD1602KeyClear(devFD);
@@ -267,18 +267,8 @@ void *KeyThread1()
             conMsg = 0x2;
             break;
 			
-            // F4  right
+            // F4  ok
         case 0x17: //
-		    showDefault = 0;
-			LCD1602KeyClear(devFD);
-			usleep(1000);
-			LCD1602KeyDispStr(devFD, 0, 0, "IP");
-			LCD1602KeyDispStr(devFD, 0, 1, "Restart");
-            conMsg = 0x1;
-            break;
-			
-            // F5  ok
-        case 0x0f: 
 		    showDefault = 0;
 			switch (conMsg)
 			{
@@ -302,6 +292,16 @@ void *KeyThread1()
 					reboot(RB_AUTOBOOT);
 					break;
 			}
+            break;
+
+            // F5  menu
+        case 0x0f: 
+		    showDefault = 0;
+			LCD1602KeyClear(devFD);
+			usleep(1000);
+			LCD1602KeyDispStr(devFD, 0, 0, "IP");
+			LCD1602KeyDispStr(devFD, 0, 1, "Restart");
+            conMsg = 0x0;
             break;
         }
         if (showDefault == 1) 
@@ -331,7 +331,7 @@ void *SocketThread2()
 {
 	char buf[BUFSIZ] = { 0 };  //数据传送的缓冲区
 	int len = 0;
-	int _revcmd;
+	int _revcmd = 0;
 	
 	mydebug("SocketThread2\n");
 
@@ -340,6 +340,7 @@ void *SocketThread2()
 		usleep(100);
         
 		// 客户端已经连接，准备接收数据
+
 		if (server_sockfd > 0 && client_sockfd > 0)
 		{
 			/*接收客户端的数据并将其发送给客户端--recv返回接收到的字节数，send返回发送的字节数*/
@@ -360,15 +361,15 @@ void *SocketThread2()
 				{
 					_revcmd = 0x03;
 				}
-				else if (strstr(buf, "LEFT"))
+				else if (strstr(buf, "BACK"))
 				{
 					_revcmd = 0x04;
 				}
-				else if (strstr(buf, "RIGHT"))
+				else if (strstr(buf, "OK"))
 				{
 					_revcmd = 0x05;
 				}
-				else if (strstr(buf, "CONFIRM"))
+				else if (strstr(buf, "MENU"))
 				{
 					_revcmd = 0x06;
 				}
@@ -411,20 +412,20 @@ void thread_create(void)
 	/*创建线程*/
 	if((temp = pthread_create(&thread[0], NULL, KeyThread1, NULL)) != 0)  //comment2 
 	{
-		mydebug("线程1创建失败!\n");
+		mydebug("KeyThread1 creat failure!\n");
 	}    		
 	else
 	{
-		mydebug("线程1被创建\n");
+		mydebug("KeyThread1 success\n");
 	}
 			
 	if((temp = pthread_create(&thread[1], NULL, SocketThread2, NULL)) != 0)  //comment3
 	{
-		mydebug("线程2创建失败");
+		mydebug("socket thread creat failure");
 	}
 	else
 	{
-		mydebug("线程2被创建\n");
+		mydebug("socket thread success\n");
 	}			
 }
 
@@ -436,13 +437,13 @@ void thread_wait(void)
 	{   
 		//comment4    
 		pthread_join(thread[0], NULL);
-		mydebug("线程1已经结束\n");
+		mydebug("thread1 end\n");
 	}
 	if(thread[1] !=0) 
 	{  
 		//comment5
 	    pthread_join(thread[1], NULL);
-		mydebug("线程2已经结束\n");
+		mydebug("thread2 end\n");
 	}
 }
 
