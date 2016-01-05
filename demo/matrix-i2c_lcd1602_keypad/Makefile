@@ -1,18 +1,13 @@
-CROSS_COMPILE ?= arm-linux-gnueabihf-
+CROSS_COMPILE ?= arm-linux-
 CC = $(CROSS_COMPILE)gcc 
-CFLAGS= -I./include/
 
-TARGET	=  $(patsubst Matrix-%.c,matrix-%, $(wildcard *.c)) 
+TARGET	=  $(patsubst Matrix-%.c,matrix-%, $(wildcard *.c))
 SRC 	=  $(wildcard *.c)
 SRC 	+= $(wildcard *.h)
 
-
 $(TARGET):$(SRC)
-	$(CC) -o $@ $(CFLAGS) $^ ./lib/libfahw.a  -lm -Wall 
+	$(CC) -o $@ -L ./lib/ -I ./include/ $^ -lfahw -lm -Wall -lpthread
 
 .PHONY: clean 
 clean:
 	rm -f $(TARGET)
-
-install:
-	install --mode=755 $(TARGET) $(INSTALLDIR)/usr/bin
