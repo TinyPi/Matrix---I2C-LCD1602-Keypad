@@ -18,6 +18,7 @@
 #include "libfahw.h"
 #define TIME_STR_BUFSIZE     32
 
+
 int server_sockfd = -1;//服务器端套接字
 int client_sockfd = -1;//客户端套接字
 int devFD = 0;
@@ -27,19 +28,21 @@ char revbuf[BUFSIZ] = {0};
 pthread_t thread[2];
 pthread_mutex_t mut;
 
+#define mydebug  printf("nanopi-wz: ");printf
+
 /*
 void LCD1602KeyDispStr(int dev, int x, int y, char *str)
 {
-	printf("%s\n", str);
+	mydebug("%s\n", str);
 }
 
 int LCD1602GetKey(int dev)
 {
 	int key = 0;
 	
-	printf("please input key value(0f, 17, 1b, 1d, 1e)\n");
+	mydebug("please input key value(0f, 17, 1b, 1d, 1e)\n");
 	scanf("%x", &key);
-	printf("press key is: %x\n", key);
+	mydebug("press key is: %x\n", key);
 	
 	return key;
 }
@@ -51,7 +54,7 @@ int LCD1602KeyInit(void)
 
 void LCD1602KeyClear(int dev)
 {
-	printf("clear screen\n");
+	mydebug("clear screen\n");
 }
 */
 
@@ -65,7 +68,7 @@ unsigned long GetLocalAddr(int dev, char *eth)
 	 
     if(socketFD == -1) 
 	{
-        printf("socket error\n");
+        mydebug("socket error\n");
         return -1;
     }
 	
@@ -77,7 +80,7 @@ unsigned long GetLocalAddr(int dev, char *eth)
     else 
     {
         server = (struct sockaddr_in*)&(ifr.ifr_addr);
-		printf("local ip address is: %s\n", inet_ntoa(server->sin_addr));
+		mydebug("local ip address is: %s\n", inet_ntoa(server->sin_addr));
 		LCD1602KeyDispStr(dev, 0, 1, inet_ntoa(server->sin_addr));
 		return server->sin_addr.s_addr;
     }
@@ -90,7 +93,6 @@ int CreatServer(unsigned long serverip, int *pserver_sockfd, int *pclient_sockfd
 	struct sockaddr_in my_addr;   //服务器网络地址结构体
 	struct sockaddr_in remote_addr; //客户端网络地址结构体
 	int sin_size;
-	int len = 0;
 	
 	memset(&my_addr,0,sizeof(my_addr)); //数据初始化--清零
 	my_addr.sin_family=AF_INET; //设置为IP通信
@@ -118,7 +120,7 @@ int CreatServer(unsigned long serverip, int *pserver_sockfd, int *pclient_sockfd
 	sin_size = sizeof(struct sockaddr_in);
 
 	/*等待客户端连接请求到达*/
-	printf("wait client...\n");
+	mydebug("wait client...\n");
 	if((client_sockfd = accept(server_sockfd,(struct sockaddr *)&remote_addr,&sin_size))<0)
 	{
 		perror("accept\n");
@@ -130,7 +132,7 @@ int CreatServer(unsigned long serverip, int *pserver_sockfd, int *pclient_sockfd
 	LCD1602KeyDispStr(devFD, 0, 0, "Client success ");
 	LCD1602KeyDispStr(devFD, 0, 1, "  Connectivity ");
 	
-	printf("accept client %s\n",inet_ntoa(remote_addr.sin_addr));
+	mydebug("accept client %s\n",inet_ntoa(remote_addr.sin_addr));
 	//len = send(client_sockfd,"Welcome to nanopi\n",21,0);//发送欢迎信息
 	
 	pthread_mutex_lock(&mut);
@@ -151,7 +153,7 @@ F1(left)        F4(right)   F5(ok)
 
 void *KeyThread1()
 {
-	printf ("KeyThread\n");
+	mydebug ("KeyThread\n");
 
     int keyValue = 0;
     int lastKeyValue = -1;
@@ -164,14 +166,14 @@ void *KeyThread1()
 
     if ((devFD = LCD1602KeyInit()) == -1) 
 	{
-        printf("Fail to init LCD1602\n");
+        mydebug("Fail to init LCD1602\n");
 		pthread_exit(NULL);
     }
 	
     LCD1602KeyClear(devFD);
     usleep(1000);
 	
-    printf("waiting key press...\n");
+    mydebug("waiting key press...\n");
 	
     while (1) 
 	{
@@ -222,7 +224,7 @@ void *KeyThread1()
 		
         if (keyValue != lastKeyValue) 
 		{
-			printf("current pressed key is %x", keyValue);
+			mydebug("current pressed key is %x", keyValue);
             lastKeyValue = keyValue;
         } 
 		else if (showDefault != 1)
@@ -290,7 +292,7 @@ void *KeyThread1()
 					}
 					else
 					{
-						printf("get ip address failure\n");
+						mydebug("get ip address failure\n");
 					}
 					break;
 				
@@ -319,7 +321,7 @@ void *KeyThread1()
             usleep(1000);
         }
     }    
-    printf("quit reading key press\n");
+    mydebug("quit reading key press\n");
     LCD1602KeyDeInit(devFD);
 
 	pthread_exit(NULL);
@@ -331,7 +333,7 @@ void *SocketThread2()
 	int len = 0;
 	int _revcmd;
 	
-	printf("SocketThread2\n");
+	mydebug("SocketThread2\n");
 
 	for (; ; )
 	{
@@ -344,7 +346,7 @@ void *SocketThread2()
 			while ((len = recv(client_sockfd, buf, BUFSIZ, 0)) >0 )
 			{
 				buf[len]='\0';
-				printf("sever receive: %s\n",buf);
+				mydebug("sever receive: %s\n",buf);
 				
 				if (strstr(buf, "DISPLAY"))
 				{
@@ -374,7 +376,7 @@ void *SocketThread2()
 				{
 					_revcmd = 0x0;
 				}
-				printf("sever revcmd: %d\n",_revcmd);
+				mydebug("sever revcmd: %d\n",_revcmd);
 				
 				pthread_mutex_lock(&mut);
 				revcmd = _revcmd;
@@ -409,20 +411,20 @@ void thread_create(void)
 	/*创建线程*/
 	if((temp = pthread_create(&thread[0], NULL, KeyThread1, NULL)) != 0)  //comment2 
 	{
-		printf("线程1创建失败!\n");
+		mydebug("线程1创建失败!\n");
 	}    		
 	else
 	{
-		printf("线程1被创建\n");
+		mydebug("线程1被创建\n");
 	}
 			
 	if((temp = pthread_create(&thread[1], NULL, SocketThread2, NULL)) != 0)  //comment3
 	{
-		printf("线程2创建失败");
+		mydebug("线程2创建失败");
 	}
 	else
 	{
-		printf("线程2被创建\n");
+		mydebug("线程2被创建\n");
 	}			
 }
 
@@ -434,19 +436,19 @@ void thread_wait(void)
 	{   
 		//comment4    
 		pthread_join(thread[0], NULL);
-		printf("线程1已经结束\n");
+		mydebug("线程1已经结束\n");
 	}
 	if(thread[1] !=0) 
 	{  
 		//comment5
 	    pthread_join(thread[1], NULL);
-		printf("线程2已经结束\n");
+		mydebug("线程2已经结束\n");
 	}
 }
 
 int main(int argc, char* argv[])
 {   
-	printf("server start \n");
+	mydebug("server start \n");
 
 	/*用默认属性初始化互斥锁*/	
 	pthread_mutex_init(&mut, NULL);
