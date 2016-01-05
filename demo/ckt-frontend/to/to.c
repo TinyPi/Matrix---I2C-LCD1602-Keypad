@@ -64,23 +64,28 @@ void SocketEnvDeInit()
     close(clientSockfd);
 }
 
-int FIFO2LCDBuf(struct FIFOData FIFOData)
+static int FIFO2LCDBuf(struct FIFOData FIFOData)
 {
     printf("%s\n", __func__);
-    int privLen = FIFOData.dataLen - sizeof(FIFOData.sourceFlag) - NUM(FIFOData.RobotData.command);
     memset(toLCDBuf, 0 ,sizeof(toLCDBuf));
     memcpy(toLCDBuf, FIFOData.RobotData.command, NUM(FIFOData.RobotData.command));
-    memcpy(toLCDBuf + NUM(FIFOData.RobotData.command), FIFOData.RobotData.priv, privLen);
+    memcpy(toLCDBuf + NUM(FIFOData.RobotData.command), FIFOData.RobotData.priv, FIFOData.RobotData.privLen);
 
-    return privLen;
+    return 0;
 }
 
-int SendData2LCD(int DataLen)
+int SendData2LCD(struct FIFOData FIFOData)
 {
     int errno = 0;
     int i = 0;
+    int DataLen = FIFOData.RobotData.privLen + NUM(FIFOData.RobotData.command);
 
     printf("%s\n", __func__);
+
+    if (0 != FIFO2LCDBuf(FIFOData))
+    {
+        printf("FIFO 2 lcd buffer error!!!\n");
+    }
 
     printf("Send to LCD data:");
     for(; i < DataLen; ++i)

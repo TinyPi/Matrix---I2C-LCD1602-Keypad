@@ -15,8 +15,7 @@ struct FIFOData;
 
 int SocketEnvInit(void);
 void SocketEnvDeInit(void);
-int FIFO2LCDBuf(struct FIFOData);
-int SendData2LCD(int);
+int SendData2LCD(struct FIFOData);
 int GetDataFromLCD(void);
 int buffer2LCD(struct LCDData *);
 

@@ -73,16 +73,11 @@ int GetDataFromFront()
 
 int DataTransfer2Front()
 {
-    int privLen = 0;
     struct FIFOData FIFOData;
     memset(FIFOprivData, 0, ROBOT_PRIV_LEN);
     FIFOData.RobotData.priv = FIFOprivData;
     Buffer2FIFO(&FIFOData);
-    if (0 == (privLen = FIFO2LCDBuf(FIFOData)))
-    {
-        printf("The length of private data of FIFO data to lcd is 0!!!\n");
-    }
-    if (0 != SendData2LCD(privLen + NUM(FIFOData.RobotData.command)))
+    if (0 != SendData2LCD(FIFOData))
     {
         printf("Send to LCD error!!!\n");
         return -1;
@@ -97,8 +92,7 @@ int DataTransfer2Bg()
     memset(RobotprivData, 0, ROBOT_PRIV_LEN);
     LCDData.priv = RobotprivData;
     buffer2LCD(&LCDData);
-    LCD2FIFOBuf(LCDData);
-    if (0 != SendData2Bg())
+    if (0 != SendData2Bg(LCDData))
         {
             printf("Send to fifo error!!!!\n");
             return -1;
