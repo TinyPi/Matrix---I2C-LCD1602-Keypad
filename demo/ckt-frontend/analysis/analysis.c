@@ -12,12 +12,12 @@ int DataBuf2FIFOData(void *source, void *dist)
 {
     int RobotDataLen = 0;
 
-    memcpy(&FIFOData4R.dataLen, buf + ROBOT_DATA_LENF_OFFSET, sizeof(FIFOData4R.dataLen));
-    memcpy(&FIFOData4R.sourceFlag, buf + ROBOT_DATA_SRCF_OFFSET, sizeof(FIFOData4R.sourceFlag));
-    memcpy(&FIFOData4R.RobotData.command, buf + ROBOT_DATA_COMM_OFFSET, sizeof(FIFOData4R.RobotData.command));
+    memcpy(&FIFOData4R.dataLen, buf + BUF_LENF_OFFSET, sizeof(FIFOData4R.dataLen));
+    memcpy(&FIFOData4R.sourceFlag, buf + BUF_SRCF_OFFSET, sizeof(FIFOData4R.sourceFlag));
+    memcpy(&FIFOData4R.RobotData.command, buf + BUF_COMM_OFFSET, sizeof(FIFOData4R.RobotData.command));
 
-    RobotDataLen = FIFOData4R.dataLen - ROBOT_DATA_PRIV_OFFSET + 1;         // 2 
-    memcpy(FIFOData4R.RobotData.priv, buf + ROBOT_DATA_PRIV_OFFSET, RobotDataLen);
+    RobotDataLen = FIFOData4R.dataLen - BUF_PRIV_OFFSET+ 1;         // 2 
+    memcpy(FIFOData4R.RobotData.priv, buf + BUF_PRIV_OFFSET, RobotDataLen);
 
     return 0;
 }

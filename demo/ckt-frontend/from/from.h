@@ -6,6 +6,7 @@
 
 struct RobotData
 {
+    char privLen;
     char command[8];
     void *priv;
 };
@@ -30,6 +31,12 @@ struct LCDData;
 
 #define ROBOT_PRIV_LEN                                  (ROBOT_DATA_MAX_LEN - ROBOT_DATA_PRIV_OFFSET + 1)
 
+#define BUF_BEGIN                               0
+#define BUF_LENF_OFFSET                    (BUF_BEGIN + 0)
+#define BUF_SRCF_OFFSET                     (BUF_LENF_OFFSET + sizeof(char))
+#define BUF_COMM_OFFSET                 (BUF_SRCF_OFFSET + sizeof(char))
+#define BUF_PRIV_OFFSET                 (BUF_COMM_OFFSET + _M_OFFSET(priv, struct RobotData))
+
 int FIFOReadEnvInit(void);
 int FIFOWriteEnvInit(void);
 void FIFOReadEnvDeInit(void);
@@ -38,6 +45,7 @@ void FIFOWriteEnvDeInit(void);
 int GetDataFromFIFO();
 int SendData2Bg();
 int Buffer2FIFO(struct FIFOData *);
-int LCD2FIFO(struct LCDData);
+int LCD2FIFOBuf(struct LCDData);
+
 
 #endif

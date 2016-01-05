@@ -58,7 +58,7 @@ void read_pthread()
 
 int write_to_fifo(const char *filename, char *buf, unsigned int len)
 {
-	int fd,rc;
+	int fd,rc, i = 0;
 
 	if(access(filename,F_OK) != 0) {
 		if((mkfifo(filename,0666)<0) && (errno != EEXIST)) {
@@ -75,7 +75,6 @@ int write_to_fifo(const char *filename, char *buf, unsigned int len)
 
 	//if (writepos == 0)
 	//pthread_cond_wait(&notfull, &lock);
-  printf("write_to_fifo, [buf]: %s\n", buf);
 
 	// write data
 	rc = write_p(fd, buf,len);
@@ -86,6 +85,13 @@ int write_to_fifo(const char *filename, char *buf, unsigned int len)
 	//}
 	//close (fd) ;
 	//pthread_exit(0);
+    printf("[changjun]Write to FIFO Data is:");
+    for(; i < rc; ++i)
+    {
+        printf("[%x]", buf[i]);
+    }
+    printf("\n");
+
 	return rc;
 
 }

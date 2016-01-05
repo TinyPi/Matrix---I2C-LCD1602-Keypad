@@ -36,10 +36,10 @@ int read_p(int fd, char *buf, int len)
 
 //read
 	memset(buf, 0, sizeof(len));
-	real_read = read(fd, buf, sizeof(len));
+	real_read = read(fd, buf, len);
 	if (0 < real_read)
 	{
-		return 0;
+		return real_read;
 	}
 	else if (0 == real_read)
 	{
@@ -51,5 +51,4 @@ int read_p(int fd, char *buf, int len)
 		printf("there is an error happening here!!!\n");
 		return -1;
 	}
-  return real_read;
 }

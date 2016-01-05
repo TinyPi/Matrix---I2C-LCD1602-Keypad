@@ -9,6 +9,9 @@
 #define FIFO_READ_NAME "/tmp/fifo_1"
 #define FIFO_WRITE_NAME "/tmp/fifo_2"
 
+#define FIFO_READ_MODE      O_RDONLY
+#define FIFO_WRITE_MODE     O_WRONLY
+
 static int read_fd, write_fd;
 static char *databuff4R = NULL;
 static char *databuff4W = NULL;
@@ -36,7 +39,7 @@ int FIFOReadEnvInit(void)
             return -1;;
         }
     }
-    if(-1 == (read_fd = open(FIFO_READ_NAME, O_RDWR) ))
+    if(-1 == (read_fd = open(FIFO_READ_NAME, FIFO_READ_MODE) ))
     {
         printf("open %s fifo error!\n", FIFO_READ_NAME);
         return -1;
@@ -71,7 +74,7 @@ int FIFOWriteEnvInit(void)
         }
     }
 
-    if(-1 == (write_fd= open(FIFO_WRITE_NAME, O_RDWR)))
+    if(-1 == (write_fd= open(FIFO_WRITE_NAME, FIFO_WRITE_MODE)))
     {
         printf("open %s fifo error!\n", FIFO_WRITE_NAME);
         return -1;
@@ -123,39 +126,41 @@ void FIFOWriteEnvDeInit()
 int GetDataFromFIFO()
 {
     int ret;
+    int i =0;
 
     printf("%s\n", __func__);
     memset(databuff4R, 0, ROBOT_DATA_MAX_LEN);
     ret = read_p(read_fd, databuff4R, ROBOT_DATA_MAX_LEN);
     if(0 > ret)
     {
-        printf("fifo read error!!!!!\n");
+        printf("**************fifo read error!!!!!\n");
         return -1;
     }
 
-    printf("From FIFO Data is %s", databuff4R);
+    printf("From FIFO Data is(%d):", ret);
+    for(; i < ret; ++i)
+    {
+        printf("[%x]", databuff4R[i]);
+    }
+    printf("\n");
+
     return ret;
 }
 
-static void FIFO2Buf()
-{
-    printf("%s\n", __func__);
-    memcpy(databuff4W+ ROBOT_DATA_LENF_OFFSET, &FIFOData4W.dataLen, sizeof(FIFOData4W.dataLen));
-    memcpy(databuff4W + ROBOT_DATA_SRCF_OFFSET, &FIFOData4W.sourceFlag, sizeof(FIFOData4W.sourceFlag));
-    memcpy(databuff4W + ROBOT_DATA_COMM_OFFSET, FIFOData4W.RobotData.command, 
-            NUM(FIFOData4W.RobotData.command));
-    memcpy(databuff4W + ROBOT_DATA_PRIV_OFFSET, FIFOData4W.RobotData.priv, 
-            strlen(FIFOData4W.RobotData.priv));
-
-}
 
 int SendData2Bg()
 {
     int ret;
-
-    FIFO2Buf();
+    int i =0;
 
     printf("%s\n", __func__);
+    printf("Write ot FIFO Data is(%d):", *databuff4W);
+    for(; i < *databuff4W; ++i)
+    {
+        printf("[%x]", databuff4W[i]);
+    }
+    printf("\n");
+
     ret = write_p(write_fd, databuff4W, *databuff4W);           //The first byte of databuff4W is data length
     if(0 > ret)
     {
@@ -169,28 +174,41 @@ int SendData2Bg()
 int Buffer2FIFO(struct FIFOData *FIFOData)
 {
     int RobotDataLen = 0;
+    int i = 0;
 
     printf("%s\n", __func__);
-    memcpy(&(FIFOData->dataLen), databuff4R + ROBOT_DATA_LENF_OFFSET, sizeof(FIFOData->dataLen));
-    memcpy(&(FIFOData->sourceFlag), databuff4R + ROBOT_DATA_SRCF_OFFSET, sizeof(FIFOData->sourceFlag));
-    memcpy(FIFOData->RobotData.command, databuff4R + ROBOT_DATA_COMM_OFFSET, NUM(FIFOData->RobotData.command));
+    memcpy(&(FIFOData->dataLen), databuff4R + BUF_LENF_OFFSET, sizeof(FIFOData->dataLen));
+    memcpy(&(FIFOData->sourceFlag), databuff4R + BUF_SRCF_OFFSET, sizeof(FIFOData->sourceFlag));
+    memcpy(FIFOData->RobotData.command, databuff4R + BUF_COMM_OFFSET, NUM(FIFOData->RobotData.command));
 
-    RobotDataLen = FIFOData->dataLen - ROBOT_DATA_SRCF_OFFSET;         // 2 
-    memcpy((char *)FIFOData->RobotData.priv, databuff4R + ROBOT_DATA_PRIV_OFFSET, RobotDataLen);
+    RobotDataLen = FIFOData->dataLen - sizeof(FIFOData->sourceFlag) - NUM(FIFOData->RobotData.command);         // 2 
+    memcpy((char *)FIFOData->RobotData.priv, databuff4R + BUF_PRIV_OFFSET, RobotDataLen);
+
+    printf("Robot command offset:%d\n", BUF_COMM_OFFSET);
+    printf("FIFOData->dataLen:%x\n", FIFOData->dataLen);
+    printf("FIFOData->sourceFlag:%x\n", FIFOData->sourceFlag);
+    printf("FIFOData->RobotData.command:");
+    for(; i < NUM(FIFOData->RobotData.command); ++i)
+    {
+        printf("[%x]", FIFOData->RobotData.command[i]);
+    }
+    printf("\n");
 
     return 0;
 }
 
-int LCD2FIFO(struct LCDData LCDData)
+int LCD2FIFOBuf(struct LCDData LCDData)
 {
-    printf("%s\n", __func__);
-    memcpy(FIFOData4W.RobotData.command, LCDData.command, NUM(LCDData.command));
+    int dataLen = 0;
+    char srcFlag = 0;
 
-    memset(FIFOData4W.RobotData.priv, 0, ROBOT_PRIV_LEN);
-    memcpy(FIFOData4W.RobotData.priv, LCDData.priv, strlen(LCDData.priv));
-    FIFOData4W.sourceFlag = 1;              //1 TBD
-    FIFOData4W.dataLen = sizeof(FIFOData4W.sourceFlag) + NUM(FIFOData4W.RobotData.command) + 
-            strlen(FIFOData4W.RobotData.priv);
+    printf("%s\n", __func__);
+
+    dataLen = sizeof(char) + NUM(LCDData.command) + LCDData.privLen;
+    memcpy(databuff4W+ BUF_LENF_OFFSET, &dataLen, sizeof(FIFOData4W.dataLen));
+    memcpy(databuff4W + BUF_SRCF_OFFSET, &(srcFlag), sizeof(char));          //1 TBD
+    memcpy(databuff4W + BUF_COMM_OFFSET, LCDData.command, NUM(LCDData.command));
+    memcpy(databuff4W + BUF_PRIV_OFFSET, LCDData.priv, LCDData.privLen);
 
     return 0;
 }

@@ -14,7 +14,6 @@
 #include "../from/from.h"
 
 static int clientSockfd = -1;
-static struct LCDData toLCD;
 static struct LCDData fromLCD;
 static char toLCDBuf[ROBOT_DATA_MAX_LEN] = {'0'};
 static char fromLCDBuf[ROBOT_DATA_MAX_LEN] = {'0'};
@@ -42,25 +41,16 @@ int SocketEnvInit()
     }
 
     printf("connected to server 127.0.0.1 successfully\n");
-    toLCD.priv = (char *)malloc(ROBOT_PRIV_LEN);
-    if(NULL == toLCD.priv)
-    {
-        printf("toLCD.priv malloc error!!!\n");
-        goto ERR;
-    }
 
     fromLCD.priv = (char *)malloc(ROBOT_PRIV_LEN);
     if(NULL == fromLCD.priv)
     {
         printf("fromLCD.priv malloc error!!!\n");
-        goto FAER;
+        goto ERR;
     }
 
-    memset(toLCD.priv, 0, ROBOT_PRIV_LEN);
     memset(fromLCD.priv, 0, ROBOT_PRIV_LEN);
     return 0;
-FAER:
-    free(toLCD.priv);
 
 ERR:
     return -1;
@@ -69,39 +59,37 @@ ERR:
 void SocketEnvDeInit()
 {
     printf("%s\n", __func__);
-    free(toLCD.priv);
     free(fromLCD.priv);
 
     close(clientSockfd);
 }
 
-int FIFO2LCD(struct RobotData RobotData)
+int FIFO2LCDBuf(struct FIFOData FIFOData)
 {
     printf("%s\n", __func__);
-    memset(toLCD.priv, 0, ROBOT_PRIV_LEN);
-    memcpy(toLCD.command, RobotData.command, NUM(RobotData.command));
-    memcpy(toLCD.priv, RobotData.priv, strlen(RobotData.priv));
-
-    return 0;
-}
-
-static void LCD2BUF()
-{
-    printf("%s\n", __func__);
+    int privLen = FIFOData.dataLen - sizeof(FIFOData.sourceFlag) - NUM(FIFOData.RobotData.command);
     memset(toLCDBuf, 0 ,sizeof(toLCDBuf));
-    memcpy(toLCDBuf, toLCD.command, NUM(toLCD.command));
-    memcpy(toLCDBuf + NUM(toLCD.command), toLCD.priv, strlen(toLCD.priv));
+    memcpy(toLCDBuf, FIFOData.RobotData.command, NUM(FIFOData.RobotData.command));
+    memcpy(toLCDBuf + NUM(FIFOData.RobotData.command), FIFOData.RobotData.priv, privLen);
+
+    return privLen;
 }
 
-int SendData2LCD()
+int SendData2LCD(int DataLen)
 {
-    int dataLen, errno = 0;
+    int errno = 0;
+    int i = 0;
 
-    LCD2BUF();
     printf("%s\n", __func__);
-    dataLen = NUM(toLCD.command) + strlen(toLCD.priv);
 
-    if(0 > send(clientSockfd, toLCDBuf, dataLen, 0))
+    printf("Send to LCD data:");
+    for(; i < DataLen; ++i)
+    {
+        printf("[%x]", *(toLCDBuf+ i));
+    }
+    printf("\n");
+
+    if(0 > send(clientSockfd, toLCDBuf, DataLen, 0))
     {
         printf("send data error: %s(errno: %d)\n", strerror(errno), errno);
         return -1;
@@ -112,29 +100,38 @@ int SendData2LCD()
 
 int GetDataFromLCD()
 {
-    int recLen;
+    int recLen = 0;
+    int i = 0;
 
     printf("%s\n", __func__);
+
+    fromLCD.privLen = 0;
+    memset(fromLCDBuf, 0, ROBOT_DATA_MAX_LEN);
 if((recLen = recv(clientSockfd, fromLCDBuf, ROBOT_DATA_MAX_LEN, 0)) == -1)
     {
        perror("recv error");
        return -1;
     }
 
+    fromLCD.privLen = recLen - NUM(fromLCD.command);
+    printf("From LCD Data is(%d):", fromLCD.privLen);
+    for(; i < recLen; ++i)
+    {
+        printf("[%c]", *(fromLCDBuf + i));
+    }
+    printf("\n");
+
     return 0;
 }
 
 int buffer2LCD(struct LCDData *LCDData)
 {
-    int dataLen = 0;
-    char *fromLCDTem = NULL;
-
     printf("%s\n", __func__);
+    memcpy(&(LCDData->privLen), &(fromLCD.privLen), sizeof(fromLCD.privLen));
+    memset(LCDData->command, 0, NUM(LCDData->command));
     memcpy(LCDData->command, fromLCDBuf, NUM(LCDData->command));
 
-    fromLCDTem = fromLCDBuf+ NUM(LCDData->command);
-    dataLen = strlen(fromLCDTem);
-    memcpy(LCDData->priv, fromLCDBuf+ NUM(LCDData->command), dataLen);
+    memcpy(LCDData->priv, fromLCDBuf+ NUM(LCDData->command), fromLCD.privLen);
 
     return 0;
 }

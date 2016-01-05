@@ -6,16 +6,17 @@
 
 struct LCDData
 {
+    char privLen;
     char command[8];
     void *priv;
 };
 
-struct RobotData;
+struct FIFOData;
 
 int SocketEnvInit(void);
 void SocketEnvDeInit(void);
-int FIFO2LCD(struct RobotData);
-int SendData2LCD(void);
+int FIFO2LCDBuf(struct FIFOData);
+int SendData2LCD(int);
 int GetDataFromLCD(void);
 int buffer2LCD(struct LCDData *);
 
