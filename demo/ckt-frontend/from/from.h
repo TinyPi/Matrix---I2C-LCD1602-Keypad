@@ -43,9 +43,8 @@ void FIFOReadEnvDeInit(void);
 void FIFOWriteEnvDeInit(void);
 
 int GetDataFromFIFO();
-int SendData2Bg();
+int SendData2Bg(struct LCDData);
 int Buffer2FIFO(struct FIFOData *);
-int LCD2FIFOBuf(struct LCDData);
 
 
 #endif

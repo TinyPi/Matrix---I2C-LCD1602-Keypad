@@ -18,6 +18,8 @@ static char *databuff4W = NULL;
 //static struct FIFOData FIFOData4R;
 static struct FIFOData FIFOData4W;
 
+static int LCD2FIFOBuf(struct LCDData);
+
 void signalFIFO(int signal)
 {
     switch (signal)
@@ -148,12 +150,15 @@ int GetDataFromFIFO()
 }
 
 
-int SendData2Bg()
+int SendData2Bg(struct LCDData LCDData)
 {
     int ret;
     int i =0;
 
     printf("%s\n", __func__);
+
+    LCD2FIFOBuf(LCDData);
+
     printf("Write ot FIFO Data is(%d):", *databuff4W);
     for(; i <= *databuff4W; ++i)
     {
@@ -183,6 +188,7 @@ int Buffer2FIFO(struct FIFOData *FIFOData)
 
     RobotDataLen = FIFOData->dataLen - sizeof(FIFOData->sourceFlag) - NUM(FIFOData->RobotData.command);         // 2 
     memcpy((char *)FIFOData->RobotData.priv, databuff4R + BUF_PRIV_OFFSET, RobotDataLen);
+    FIFOData->RobotData.privLen = RobotDataLen;
 
     printf("Robot command offset:%d\n", BUF_PRIV_OFFSET);
     printf("FIFOData->dataLen:%d\n", FIFOData->dataLen);
@@ -197,7 +203,7 @@ int Buffer2FIFO(struct FIFOData *FIFOData)
     return 0;
 }
 
-int LCD2FIFOBuf(struct LCDData LCDData)
+static int LCD2FIFOBuf(struct LCDData LCDData)
 {
     int dataLen = 0;
     char srcFlag = 0;
