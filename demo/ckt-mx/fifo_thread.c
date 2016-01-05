@@ -25,13 +25,21 @@ int __read_pthread(const char *filename)
 	do {
 
 		//read buff
+		int i=0;
 		memset(fifo_read, 0, sizeof(fifo_read));
+		printf("[ckt-li] read fifo:%s, rc = %d 111111!\n", filename, rc);
 		rc = read_p(fd, fifo_read, sizeof(fifo_read));//block until read data
 		if(rc < 0) {
 			printf("read fifo failed, rc %d\n", rc);	
 		}
+		printf("[ckt-li]read from FIFO Data is:");
+		for(; i < rc; ++i) {
+		printf("[%x]", fifo_read[i]);
+		}
+    printf("\n");
 		// call send API
 		pack_and_send(fifo_read, sizeof(fifo_read));
+		printf("[ckt-li]pack and send done!\n");
 		//readpos++;
 		//pthread_cond_signal(&notempty);
 
@@ -85,7 +93,7 @@ int write_to_fifo(const char *filename, char *buf, unsigned int len)
 	//}
 	//close (fd) ;
 	//pthread_exit(0);
-    printf("[changjun]Write to FIFO Data is:");
+    printf("[ckt-li]Write to FIFO Data is:");
     for(; i < rc; ++i)
     {
         printf("[%x]", buf[i]);
