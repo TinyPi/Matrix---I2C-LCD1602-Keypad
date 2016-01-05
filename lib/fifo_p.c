@@ -16,7 +16,7 @@ int write_p(int fd, char *buf, int len) {
 	}
 //write
 	if ((real_write = write(fd,buf,len)) > 0) {
-	printf("[ckt-li]write to FIFO Data is:");
+	printf("[ckt-li]write_p to FIFO Data is:");
 	for(; i < real_write; ++i){
 	printf("[%x]", buf[i]);
 	}
