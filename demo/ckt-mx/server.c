@@ -38,14 +38,14 @@ int pack_and_send(char *buf, unsigned int size)
 	char buf_tmp[512];
 	unsigned char client_id = buf[1];
 	unsigned int  buf_size = (unsigned int)buf[0];
-	
-	if (buf_size > 512)
-	   return -1;
-	
+
+	//if (buf_size > 512)
+	//	return -1;
+
 	buf_tmp[0] = 0x86;
-        buf_tmp[1] = buf_size;
-        memcpy((void *)&buf_tmp[2], (void *)&buf[2], buf_size);
-        buf_tmp[buf_size+2-1] = 0x68;
+	buf_tmp[1] = buf_size;
+	memcpy((void *)&buf_tmp[2], (void *)&buf[2], buf_size);
+	buf_tmp[buf_size+2-1] = 0x68;
 	send(fd_A[client_id], buf_tmp, buf_size+2, 0);
 	printf("%s, send buf size=%d\r\n", buf_tmp, buf_size+2);
 	return 0;
@@ -54,19 +54,19 @@ int pack_and_send(char *buf, unsigned int size)
 
 void parse(char client_id, char *buf, unsigned int size)
 {
-	
+
 	char dst_buf[512];
 	unsigned int len = 0;
 	if ( (buf[0]&0xff) != (unsigned char)0x86)
 	{
-	   printf("pkt has wrong\r\n");	
+		printf("pkt has wrong\r\n");	
 	}
 	dst_buf[0] = buf[1]+1; // length;
 	dst_buf[1] = client_id;
 	len = (0xff & buf[1]);
-        memcpy((void *)&dst_buf[2], &buf[2], len);
+	memcpy((void *)&dst_buf[2], &buf[2], len);
 #ifndef DDD
-  printf("before write to fifo: %s\n", dst_buf);
+	printf("before write to fifo: %s\n", dst_buf);
 	write_to_fifo(WRITE_FIFO, dst_buf, len+2);
 #endif
 	printf("dst_buf, rcv=%d\r\n", size);
@@ -77,37 +77,41 @@ static unsigned char gbuf[512];
 static unsigned int  gcount = 0;
 int CALL_BACK(int client_id, char *buf, unsigned int size)
 {	
-        static unsigned int locker = 0;	
+	static unsigned int locker = 0;	
 	static unsigned char pkt_size;	
-	
-	#if 1
+
+#if 1
 	printf("%x====%d\r\n", buf[0], size);
-	
+
 	if ((buf[0]&0xff) == 0x86 && locker == 0)
 	{
-	   locker = 1;
+		locker = 1;
+		gcount = 0;
 	}	
 
-        if (locker >= 1)
+	if (locker >= 1)
 	{
-	   gbuf[gcount ++] = buf[0];
-           
-	   if (locker ++ == 2)
-           {
-              pkt_size = (buf[0]&0xff);
-              pkt_size += 3;
-	      printf("get=%d!!!!!!!!!!\r\n", pkt_size);
-           }
-            
-           //printf("===========pkt_siez======%d\r\n", pkt_size, gcount);
-	   if ( ((buf[0]&0xff) == 0x68)  && (gcount == (unsigned int)pkt_size))
-	   {
-              locker = 0;
-              parse(client_id, gbuf, gcount);
-	      gcount = 0;
-	   }
+		gbuf[gcount ++] = buf[0];
+
+		if (locker ++ == 2)
+		{
+			pkt_size = (buf[0]&0xff);
+			pkt_size += 3;
+			printf("get=%d!!!!!!!!!!\r\n", pkt_size);
+		}
+
+		//printf("===========pkt_siez======%d\r\n", pkt_size, gcount);
+		if ( gcount == (unsigned int)pkt_size )
+		{
+			if ( (buf[0]&0xff) == 0x68)
+				parse(client_id, gbuf, gcount);
+			else
+				printf("rcv data error, not found 0x68 \r\n"); 
+			locker = 0;
+			gcount = 0;
+		}
 	}
-	#endif
+#endif
 	return 0;	
 }
 
@@ -252,8 +256,8 @@ pthread_t server_init(void)
 // use test routine: input cc server.c -DDDD -lpthread
 void main(int argc, char **argv)
 {
-     pthread_t id = server_init();
-     pthread_join(id, NULL);
+	pthread_t id = server_init();
+	pthread_join(id, NULL);
 }
 #endif
 
