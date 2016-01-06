@@ -4,6 +4,10 @@
 #include <stdlib.h>
 #include <stddef.h>
 
+typedef unsigned char uchar;
+typedef unsigned int uint;
+
+
 #define _M_OFFSET(mem, type)              (offsetof(type, mem))
 #define NUM(x)                                            (sizeof(x)/sizeof(x[0]))
 

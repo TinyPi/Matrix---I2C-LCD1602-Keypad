@@ -3,13 +3,13 @@
 #include "../from/from.h"
 #include "../to/to.h"
 
-char *FIFOprivData = NULL;
-char *RobotprivData = NULL;
+static uchar *FIFOprivData = NULL;
+static uchar *RobotprivData = NULL;
 
 int AnaIfInit()
 {
-    FIFOprivData = (char*)malloc(ROBOT_PRIV_LEN);
-    RobotprivData = (char*)malloc(ROBOT_PRIV_LEN);
+    FIFOprivData = (uchar*)malloc(ROBOT_PRIV_LEN);
+    RobotprivData = (uchar*)malloc(ROBOT_PRIV_LEN);
 
     return 0;
 }

@@ -13,8 +13,8 @@
 #define FIFO_WRITE_MODE     O_WRONLY
 
 static int read_fd, write_fd;
-static char *databuff4R = NULL;
-static char *databuff4W = NULL;
+static uchar *databuff4R = NULL;
+static uchar *databuff4W = NULL;
 //static struct FIFOData FIFOData4R;
 static struct FIFOData FIFOData4W;
 
@@ -51,7 +51,7 @@ int FIFOReadEnvInit(void)
 // on it
     signal(SIGPIPE, signalFIFO);
 
-    databuff4R = (char*)malloc(ROBOT_DATA_MAX_LEN);
+    databuff4R = (uchar*)malloc(ROBOT_DATA_MAX_LEN);
     if(NULL == databuff4R)
     {
         printf("databuff4R malloc error!!!!\n");
@@ -86,14 +86,14 @@ int FIFOWriteEnvInit(void)
 // on it
     signal(SIGPIPE, signalFIFO);
 
-    databuff4W = (char*)malloc(ROBOT_DATA_MAX_LEN);
+    databuff4W = (uchar*)malloc(ROBOT_DATA_MAX_LEN);
     if(NULL == databuff4W)
     {
         printf("databuff4W malloc error!!!\n");
         goto ERR;
     }
 
-    FIFOData4W.RobotData.priv= (char *)malloc(ROBOT_PRIV_LEN);
+    FIFOData4W.RobotData.priv= (uchar *)malloc(ROBOT_PRIV_LEN);
     if(NULL == FIFOData4W.RobotData.priv)
     {
         printf("FIFOData4W malloc error!!!\n");
@@ -132,7 +132,7 @@ int GetDataFromFIFO()
 
     printf("%s\n", __func__);
     memset(databuff4R, 0, ROBOT_DATA_MAX_LEN);
-    ret = read_p(read_fd, databuff4R, ROBOT_DATA_MAX_LEN);
+    ret = read_p(read_fd, (char *)databuff4R, ROBOT_DATA_MAX_LEN);
     if(0 > ret)
     {
         printf("**************fifo read error!!!!!\n");
@@ -166,7 +166,7 @@ int SendData2Bg(struct LCDData LCDData)
     }
     printf("\n");
 
-    ret = write_p(write_fd, databuff4W, (*databuff4W) + 1);           //The first byte of databuff4W is data length
+    ret = write_p(write_fd, (char *)databuff4W, (*databuff4W) + 1);           //The first byte of databuff4W is data length
     if(0 > ret)
     {
         printf("fifo write error!!\n");
@@ -187,7 +187,7 @@ int Buffer2FIFO(struct FIFOData *FIFOData)
     memcpy(FIFOData->RobotData.command, databuff4R + BUF_COMM_OFFSET, NUM(FIFOData->RobotData.command));
 
     RobotDataLen = FIFOData->dataLen - sizeof(FIFOData->sourceFlag) - NUM(FIFOData->RobotData.command);         // 2 
-    memcpy((char *)FIFOData->RobotData.priv, databuff4R + BUF_PRIV_OFFSET, RobotDataLen);
+    memcpy((uchar *)FIFOData->RobotData.priv, databuff4R + BUF_PRIV_OFFSET, RobotDataLen);
     FIFOData->RobotData.privLen = RobotDataLen;
 
     printf("Robot command offset:%d\n", BUF_PRIV_OFFSET);
@@ -206,7 +206,7 @@ int Buffer2FIFO(struct FIFOData *FIFOData)
 static int LCD2FIFOBuf(struct LCDData LCDData)
 {
     int dataLen = 0;
-    char srcFlag = 0;
+    uchar srcFlag = 0;
 
     printf("%s\n", __func__);
 

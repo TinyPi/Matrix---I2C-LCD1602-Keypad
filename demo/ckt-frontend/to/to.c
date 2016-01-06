@@ -9,14 +9,12 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <string.h>
-#include "utils.h"
 #include "to.h"
-#include "../from/from.h"
 
 static int clientSockfd = -1;
 static struct LCDData fromLCD;
-static char toLCDBuf[ROBOT_DATA_MAX_LEN] = {'0'};
-static char fromLCDBuf[ROBOT_DATA_MAX_LEN] = {'0'};
+static uchar toLCDBuf[ROBOT_DATA_MAX_LEN] = {'0'};
+static uchar fromLCDBuf[ROBOT_DATA_MAX_LEN] = {'0'};
 
 int SocketEnvInit()
 {
@@ -42,7 +40,7 @@ int SocketEnvInit()
 
     printf("connected to server 127.0.0.1 successfully\n");
 
-    fromLCD.priv = (char *)malloc(ROBOT_PRIV_LEN);
+    fromLCD.priv = (uchar *)malloc(ROBOT_PRIV_LEN);
     if(NULL == fromLCD.priv)
     {
         printf("fromLCD.priv malloc error!!!\n");

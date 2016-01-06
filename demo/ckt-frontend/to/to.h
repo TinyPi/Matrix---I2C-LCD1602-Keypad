@@ -1,13 +1,14 @@
 #ifndef _TO_H_
 #define _TO_H_
-#include "../from/from.h"
+#include "from.h"
+#include "utils.h"
 
 #define LCDBUF_LEN      (ROBOT_COM_LEN + ROBOT_PRIV_LEN)
 
 struct LCDData
 {
-    char privLen;
-    char command[8];
+    uchar privLen;
+    uchar command[8];
     void *priv;
 };
 

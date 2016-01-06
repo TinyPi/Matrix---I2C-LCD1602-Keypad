@@ -6,8 +6,8 @@
 
 struct RobotData
 {
-    char privLen;
-    char command[8];
+    uchar privLen;
+    uchar command[8];
     void *priv;
 };
 
@@ -15,8 +15,8 @@ struct RobotData
 
 struct FIFOData
 {
-    char dataLen;
-    char sourceFlag;
+    uchar dataLen;
+    uchar sourceFlag;
     struct RobotData RobotData;
 };
 
