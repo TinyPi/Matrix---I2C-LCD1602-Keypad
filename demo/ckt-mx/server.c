@@ -37,17 +37,15 @@ int pack_and_send(char *buf, unsigned int size)
 {
 	char buf_tmp[512];
 	unsigned char client_id = buf[1];
-	unsigned int  buf_size = (unsigned int)buf[0];
-
-	//if (buf_size > 512)
-	//	return -1;
-
+	unsigned int  buf_size = (unsigned int)buf[0] -1;
+     
 	buf_tmp[0] = 0x86;
 	buf_tmp[1] = buf_size;
+
 	memcpy((void *)&buf_tmp[2], (void *)&buf[2], buf_size);
-	buf_tmp[buf_size+2-1] = 0x68;
-	send(fd_A[client_id], buf_tmp, buf_size+2, 0);
-	printf("%s, send buf size=%d\r\n", buf_tmp, buf_size+2);
+	buf_tmp[buf_size + 2] = 0x68;
+	send(fd_A[client_id], buf_tmp, buf_size+3, 0);
+	printf("send buf size=%d\r\n", buf_size+3);
 	return 0;
 }
 
@@ -66,12 +64,12 @@ void parse(char client_id, char *buf, unsigned int size)
 	len = (0xff & buf[1]);
 	memcpy((void *)&dst_buf[2], &buf[2], len);
 #ifndef DDD
-	printf("before write to fifo: %s\n", dst_buf);
+	//printf("before write to fifo: %s\n", dst_buf);
 	write_to_fifo(WRITE_FIFO, dst_buf, len+2);
 #endif
 	printf("dst_buf, rcv=%d\r\n", size);
 	print_hex(buf, size);
-	send(fd_A[client_id], buf, size, 0);
+	//send(fd_A[client_id], buf, size, 0);
 }
 
 static unsigned char gbuf[512];
