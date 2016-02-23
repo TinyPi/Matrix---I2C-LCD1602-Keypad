@@ -1,42 +1,60 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <memory.h>
 #include <errno.h>
 #include <pthread.h>
 #include "libfahw.h"
 #include "utils.h"
-#include "analysisif/analysisif.h"
+#include "module.h"
 #include "ckt_analysis.h"
+#include "module.h"
 
+unpack_source *unpack_src = NULL;
 static pthread_t ReadId, WriteId;
 
 
-void ReadFromThread()
+void module_control()
 {
     int ret;
+    control_str *control_struct = NULL;
+    control_struct = (control_str*)malloc(sizeof(control_str));
+    if(NULL == control_struct)
+        {
+            PDEBUG(LERR, "Control_struct malloc erro!!!");
+            pthread_exit("module_control malloc error");
+        }
 
-    printf("%s\n", __func__);
     do
     {
-        ret = GetDataFromBg();
-        if(0 > ret)
+        memset(&(unpack_src->package), 0, sizeof(package));
+        memset(control_struct, 0, sizeof(control_str));
+        ret = get_package(unpack_src->read_fd, &(unpack_src->package));
+        if(0 != ret)
         {
-            printf("Get data from background error!!!!!\n");
+            PDEBUG(LERR, "Get data from background error!!!!!");
             continue;
         }
 
-        ret = DataTransfer2Front();
-        if (0 != ret)
-        {
-            printf("DataTransfer to fronend error!!\n");
-            exit(-1);
-        }
+        ret = analysis_package(unpack_src->package, control_struct);
+        if(0 != ret)
+            {
+                PDEBUG(LERR, "Analysis package error!!!!");
+                pthread_exit("analysis_package error");
+            }
 
+        ret = do_control(control_struct);
+        if(0 != ret)
+        {
+            PDEBUG(LERR, "Do control error!!!!");
+            //pthread_exit("do_control error");
+        }
     }while (0 == ret);
 
 }
 
 void WriteToThread()
 {
+#if 0
     int ret = 0;
 
     printf("%s\n", __func__);
@@ -46,105 +64,93 @@ void WriteToThread()
         if (0 != ret)
         {
             printf("Get data from front error!!\n");
-            exit(-1);
+            pthread_exit("errro");
         }
 
         ret = DataTransfer2Bg();
         if(0 > ret)
         {
             printf("Send data to background error!!\n");
-            exit(-1);
+            pthread_exit("error");
         }
     }while (0 == ret);
-
+#endif
 }
 
-int EnvIinit()
+int EnvIinit(unpack_source *unpack_src)
 {
-    if (-1 ==AnaIfInit())
+    if (0 != unpack_env_int(unpack_src->read_fd, unpack_src->write_fd))
     {
-        printf(" Analysis interface init error!\n");
+        PDEBUG(LERR, " From background env init error!\n");
         return -1;
     }
 
-
-    if (-1 ==FromBgEnvInit())
+//control module init
+    if (0 != ctr_env_init())
     {
-        printf(" From background env init error!\n");
-        return -1;
-    }
-
-    if (-1 ==ToBgEnvInit())
-    {
-        printf("To background env init error!\n");
-        return -1;
-    }
-
-    if (-1 == FromFrontEnvInit())
-    {
-        printf("From front end environment init error!\n");
-        return -1;
-    }
-
-    if (-1 == ToFrontEnvInit())
-    {
-        printf("To front end environment init error!\n");
+        PDEBUG(LERR, "ctr_env_init error~~");
         return -1;
     }
 
     return 0;
 }
 
-void EnvDeIinit()
+void EnvDeIinit(unpack_source *unpack_src)
 {
-    printf("%s\n", __func__);
     pthread_join(ReadId, NULL);
-    printf("%s-----Read thread exit\n", __func__);
+    PDEBUG(LINFO,"---Module control thread exit\n");
 
     pthread_join(WriteId, NULL);
-    printf("%s-----Write thread exit\n", __func__);
+    PDEBUG(LINFO, "---Write thread exit\n");
 
-    FromBgEnvDeInit();
-    ToBgEnvDeInit();
-    FromFrontEnvDeInit();
-    ToFrontEnvDeInit();
-    AnaIfDeInit();
-    printf("%s-----all deinit exit\n", __func__);
+    unpack_env_deinit(unpack_src->read_fd, unpack_src->write_fd);
+    ctr_env_deinit();
+    PDEBUG(LINFO, "---all deinit exit\n");
 }
 
 
 int main(int argc, char *argv[])
 {
     int ret;
+    FILE* fp;
+    char buffer[128];
 
-    printf("Env init begin!!!\n");
-    if (0 > EnvIinit())
+    fp = fopen("./usr/bin/mx", "r");
+    fgets(buffer, sizeof(buffer), fp);
+    PDEBUG(LWARN, "%s", buffer);
+    unpack_src = (unpack_source *)malloc(sizeof(unpack_source));
+
+    PDEBUG(LINFO, "Env init begin!!!\n");
+    if (0 != EnvIinit(unpack_src))
     {
-        printf("Envinit error!\n");
+        PDEBUG(LERR, "Envinit error!\n");
+        pclose(fp);
         return -1;
     }
 
-    printf("Creat Read thread begin!!!\n");
-    ret=pthread_create(&ReadId,NULL,(void *) ReadFromThread,NULL);
+    PDEBUG(LINFO, "Creat Read thread begin!!!\n");
+    ret=pthread_create(&ReadId,NULL,(void *) module_control,NULL);
     if(0 != ret)
     {
-        printf("Create read thread error!\n");
+        PDEBUG(LERR, "Create read thread error!\n");
         goto ERR;
     }
 
-    printf("Creat Write thread begin!!!\n");
+    PDEBUG(LINFO, "Creat Write thread begin!!!\n");
     ret=pthread_create(&WriteId,NULL,(void *) WriteToThread,NULL);
     if(0 != ret)
     {
-        printf("Create wirte thread error!\n");
+        PDEBUG(LERR, "Create wirte thread error!\n");
         goto ERR;
     }
-    EnvDeIinit();
-    printf("Process exit !!!!!!!!!\n");
+    EnvDeIinit(unpack_src);
+    pclose(fp);
+    PDEBUG(LINFO, "Process exit !!!!!!!!!\n");
     return 0;
 
 ERR:
-    printf("error exit!!\n");
-    EnvDeIinit();
+    PDEBUG(LERR, "error exit!!\n");
+    EnvDeIinit(unpack_src);
+    pclose(fp);
     return -1;
 }
