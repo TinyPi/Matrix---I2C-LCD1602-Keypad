@@ -28,6 +28,8 @@ libfahw.a
 
 /install/*
 
+demo/ckt-frontend/include/
+
 #vim swap file
 *.swp
 

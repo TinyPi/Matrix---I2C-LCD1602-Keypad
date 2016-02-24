@@ -18,6 +18,7 @@ SRC 	=  $(wildcard *.c unpack/*.c control/*.c module/*.c analysis/*.c)
 OBJS	= $(patsubst %.c, %.o, $(SRC))
 
 all:
+	mkdir include
 	find . -name "*.h" -exec cp {} include/ \;
 	$(MAKE) $(TARGET)
 
@@ -31,6 +32,7 @@ $(TARGET):$(OBJS)
 clean:
 	rm -f $(TARGET) $(OBJS)
 	rm -fr include/*
+	rm -fr include
 	cd $(SUBDIRS);$(MAKE) clean
 
 install:

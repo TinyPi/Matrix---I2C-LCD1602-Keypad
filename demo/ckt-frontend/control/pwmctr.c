@@ -13,6 +13,7 @@ int pwm_open(char * filename)
 
 int pwm_ioctr(int fd, uchar* control)
 {
+//1 TBD
     return 0;
 }
 
