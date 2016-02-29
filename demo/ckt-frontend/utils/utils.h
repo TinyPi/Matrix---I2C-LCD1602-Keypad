@@ -21,7 +21,7 @@ enum bug_level
 #define NUM(x)                                            (sizeof(x)/sizeof(x[0]))
 
 #ifdef __DEBUG
-#define BUGLEVEL    LERR
+#define BUGLEVEL    LINFO
 #define PDEBUG(buglevel, fmt, ...)   \
 do  \
 {   \

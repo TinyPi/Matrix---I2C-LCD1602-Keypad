@@ -50,9 +50,10 @@ void module_control()
         }
     }while (0 == ret);
 
+    free(control_struct);
 }
 
-void WriteToThread()
+void module_response()
 {
 #if 0
     int ret = 0;
@@ -79,9 +80,9 @@ void WriteToThread()
 
 int EnvIinit(unpack_source *unpack_src)
 {
-    if (0 != unpack_env_int(unpack_src->read_fd, unpack_src->write_fd))
+    if (0 != unpack_env_int(&unpack_src->read_fd, &unpack_src->write_fd))
     {
-        PDEBUG(LERR, " From background env init error!\n");
+        PDEBUG(LERR, " unpack env init error!");
         return -1;
     }
 
@@ -98,13 +99,17 @@ int EnvIinit(unpack_source *unpack_src)
 void EnvDeIinit(unpack_source *unpack_src)
 {
     pthread_join(ReadId, NULL);
-    PDEBUG(LINFO,"---Module control thread exit\n");
+    PDEBUG(LINFO,"---Module control thread exit");
 
     pthread_join(WriteId, NULL);
-    PDEBUG(LINFO, "---Write thread exit\n");
+    PDEBUG(LINFO, "---Module response thread exit");
 
+    PDEBUG(LINFO, "Unpack env deinit");
     unpack_env_deinit(unpack_src->read_fd, unpack_src->write_fd);
+
+    PDEBUG(LINFO, "Control env deinit");
     ctr_env_deinit();
+
     PDEBUG(LINFO, "---all deinit exit\n");
 }
 
@@ -112,45 +117,43 @@ void EnvDeIinit(unpack_source *unpack_src)
 int main(int argc, char *argv[])
 {
     int ret;
-    FILE* fp;
-    char buffer[128];
 
-    fp = fopen("./usr/bin/mx", "r");
-    fgets(buffer, sizeof(buffer), fp);
-    PDEBUG(LWARN, "%s", buffer);
+    PDEBUG(LDEBUG, "Env init begin!!!\n");
+
+    system("mx&");
+
     unpack_src = (unpack_source *)malloc(sizeof(unpack_source));
 
-    PDEBUG(LINFO, "Env init begin!!!\n");
     if (0 != EnvIinit(unpack_src))
     {
         PDEBUG(LERR, "Envinit error!\n");
-        pclose(fp);
+        free(unpack_src);
         return -1;
     }
 
-    PDEBUG(LINFO, "Creat Read thread begin!!!\n");
+    PDEBUG(LINFO, "Creat module_control thread begin!!!\n");
     ret=pthread_create(&ReadId,NULL,(void *) module_control,NULL);
     if(0 != ret)
     {
-        PDEBUG(LERR, "Create read thread error!\n");
+        PDEBUG(LERR, "Create module_control thread error!\n");
         goto ERR;
     }
 
-    PDEBUG(LINFO, "Creat Write thread begin!!!\n");
-    ret=pthread_create(&WriteId,NULL,(void *) WriteToThread,NULL);
+    PDEBUG(LINFO, "Creat module_response thread begin!!!\n");
+    ret=pthread_create(&WriteId,NULL,(void *) module_response,NULL);
     if(0 != ret)
     {
-        PDEBUG(LERR, "Create wirte thread error!\n");
+        PDEBUG(LERR, "Create module_response thread error!\n");
         goto ERR;
     }
     EnvDeIinit(unpack_src);
-    pclose(fp);
+    free(unpack_src);
     PDEBUG(LINFO, "Process exit !!!!!!!!!\n");
     return 0;
 
 ERR:
     PDEBUG(LERR, "error exit!!\n");
     EnvDeIinit(unpack_src);
-    pclose(fp);
+    free(unpack_src);
     return -1;
 }

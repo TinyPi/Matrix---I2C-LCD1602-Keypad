@@ -36,11 +36,12 @@ int ctr_env_init(void)
 
     if(0 == access(PWM_FILE, F_OK))
     {
+        PDEBUG(LDEBUG, "There is pwm file here");
         if(0 == add_module_into_system( module, pwm_module_init))
-            {
-                module_exist = module_exist | ME_PWM;
-                module->fd = module->open(PWM_FILE);
-            }
+        {
+            module_exist = module_exist | ME_PWM;
+            module->fd = module->open(PWM_FILE);
+        }
     }
 
 //1 TBD ULTRASOUND
@@ -76,12 +77,16 @@ void ctr_env_deinit(void)
 
 int do_move_command( control_data control_d)
 {
-    uchar data[256] = {'0'};
+    char data[8] = {'0'};
     struct control_module* control_m = NULL;
     control_m = get_module(PWM_MODULE_NAME);
 
+    PDEBUG(LDEBUG, " ");
     data[0] = control_d.axis.x;
     data[1] = control_d.axis.y;
+    data[2] = control_d.axis.direction;
+    data[3] = control_d.axis.forward_t;
+    data[4] = control_d.axis.swerve_t;
 
     if (0 == (control_m->ioctr(control_m->fd, data)))
     {
@@ -100,7 +105,7 @@ int do_control(control_str* control_str)
 {
     if(1 != (control_str->module_req & module_exist))
     {
-        PDEBUG(LERR, "cmd[%s] need modules, but can be found!!", control_str->cmd);
+        PDEBUG(LERR, "cmd[%s] need modules, but can't be found!!", control_str->cmd);
         return -1;
     }
 

@@ -12,8 +12,11 @@
 
 typedef struct
 {
-    uint x;
-    uint y;
+    char x;
+    char y;
+    char direction;
+    char forward_t;
+    char swerve_t;
 }xy_axis;
 
 typedef union
@@ -23,7 +26,7 @@ typedef union
 
 typedef struct
 {
-    uchar *cmd;
+    uchar cmd[8];
     uint module_req;    //command requres modules
     control_data control_d;
     int (*control_func)(control_data control_d);

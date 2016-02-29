@@ -16,7 +16,7 @@ struct control_module
 //write data to module
     int (*write)(int fd, char* buf);
 //iocontrol
-    int (*ioctr)(int fd, uchar* control);
+    int (*ioctr)(int fd, char* control);
 //module close
     int (*close)(int fd);
 //other normal  method to control module

@@ -19,7 +19,7 @@ typedef struct
 {
     uchar priv_len;
     uchar command[8];
-    void *priv;
+    char priv[240];
 }priv_data;
 
 typedef struct
@@ -31,7 +31,7 @@ typedef struct
 
 
 
-int unpack_env_int(int, int);
+int unpack_env_int(int*, int*);
 void unpack_env_deinit(int, int);
 int get_package(int, package*);
 

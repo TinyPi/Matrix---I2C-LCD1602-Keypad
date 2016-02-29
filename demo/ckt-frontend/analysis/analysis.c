@@ -29,7 +29,7 @@ static int get_cmd_type(uchar *cmd)
 int analysis_package(package package, control_str* control_str)
 {
     uchar cmd[8] = { 0 };
-    uchar *data = NULL;
+    char *data = NULL;
 
     memcpy(cmd, package.priv_data.command, NUM(package.priv_data.command));
 
@@ -47,9 +47,13 @@ int analysis_package(package package, control_str* control_str)
                 PDEBUG(LERR, "It's move cmd, but there isn't data!!!error!!");
                 return -1;
             }
+//data of move command is [x][y][direction][time for move][time for swerve]
             memcpy(control_str->cmd, cmd, sizeof(cmd));
             control_str->control_d.axis.x = *(data + 0);
             control_str->control_d.axis.y = *(data + 1);
+            control_str->control_d.axis.direction= *(data +2);
+            control_str->control_d.axis.forward_t= *(data + 3);
+            control_str->control_d.axis.swerve_t = *(data + 4);
             control_str->module_req |= ME_PWM;  //move command needs pwm moudule
             control_str->control_func= do_move_command;
             break;
