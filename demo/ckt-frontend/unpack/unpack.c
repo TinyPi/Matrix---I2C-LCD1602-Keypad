@@ -10,8 +10,8 @@
 #define FIFO_READ_NAME "/tmp/fifo_1"
 #define FIFO_WRITE_NAME "/tmp/fifo_2"
 
-#define FIFO_READ_MODE      O_RDONLY
-#define FIFO_WRITE_MODE     O_WRONLY
+#define FIFO_READ_MODE      O_RDWR
+#define FIFO_WRITE_MODE     O_RDWR
 
 void signalFIFO(int signal)
 {

@@ -7,10 +7,10 @@
 struct control_module
 {
 //module name
-    char* name;
+    char name[32];
     int fd;
 //open module
-    int (*open)(char* name);
+    int (*open)(char* name, int flag);
 //read data from module
     int (*read)(int fd, char* buf);
 //write data to module

@@ -30,7 +30,7 @@ int module_register(struct control_module *control_module)
     struct list_head* head = list_head;
     struct list_head* pos = NULL;
 
-
+    PDEBUG(LDEBUG, "Register %s into system", control_module->name);
     list_for_each(pos, head)
     {
         control_temp = container_of(pos,struct control_module, list_head);
@@ -42,6 +42,7 @@ int module_register(struct control_module *control_module)
     }
 
     list_add_tail(list_head_new, list_head);
+    PDEBUG(LDEBUG, "Register %s into system end!!!", control_module->name);
     return 0;
 }
 

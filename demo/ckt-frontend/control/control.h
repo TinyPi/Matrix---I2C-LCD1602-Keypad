@@ -3,6 +3,8 @@
 #include "utils.h"
 #include "module.h"
 
+#define PWM_MODULE_FILE     "/lib/modules/pwm_gpio.ko"
+
 #define PWM_FILE    "/dev/pwm"
 #define ULTRASOUND_FILE "/dev/ultrasound"
 
@@ -34,6 +36,7 @@ typedef struct
 
 int ctr_env_init(void);
 void ctr_env_deinit(void);
+int do_around_move(void);
 int do_move_command(control_data);
 int do_auto_move_command(control_data);
 int do_control(control_str*);

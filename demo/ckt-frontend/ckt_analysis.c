@@ -3,11 +3,11 @@
 #include <memory.h>
 #include <errno.h>
 #include <pthread.h>
+#include <unistd.h>
 #include "libfahw.h"
 #include "utils.h"
 #include "module.h"
 #include "ckt_analysis.h"
-#include "module.h"
 
 unpack_source *unpack_src = NULL;
 static pthread_t ReadId, WriteId;
@@ -37,10 +37,10 @@ void module_control()
 
         ret = analysis_package(unpack_src->package, control_struct);
         if(0 != ret)
-            {
-                PDEBUG(LERR, "Analysis package error!!!!");
-                pthread_exit("analysis_package error");
-            }
+        {
+            PDEBUG(LERR, "Analysis package error!!!!");
+            pthread_exit("analysis_package error");
+        }
 
         ret = do_control(control_struct);
         if(0 != ret)
@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
     PDEBUG(LDEBUG, "Env init begin!!!\n");
 
     system("mx&");
-
+    sleep(1);
     unpack_src = (unpack_source *)malloc(sizeof(unpack_source));
 
     if (0 != EnvIinit(unpack_src))
@@ -129,6 +129,12 @@ int main(int argc, char *argv[])
         PDEBUG(LERR, "Envinit error!\n");
         free(unpack_src);
         return -1;
+    }
+
+    if(0 != do_around_move())
+    {
+        PDEBUG(LERR, "Do around move error!\n");
+        goto ERR;
     }
 
     PDEBUG(LINFO, "Creat module_control thread begin!!!\n");

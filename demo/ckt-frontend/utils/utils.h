@@ -7,6 +7,12 @@
 typedef unsigned char uchar;
 typedef unsigned int uint;
 
+typedef enum _bool
+{
+    FALSE = 0,
+    TRUE = 1
+}BOOL;
+
 enum bug_level
 {
     LINFO =  0,
@@ -26,7 +32,7 @@ enum bug_level
 do  \
 {   \
     if(buglevel >= BUGLEVEL) \
-        printf("["__FILE__ "]Line:%d:" fmt "\n", __LINE__, ##__VA_ARGS__); \
+        printf("["__FILE__ "]%s  Line:%d:" fmt "\n",__func__,  __LINE__, ##__VA_ARGS__); \
 }while(0)
 #else
 #define PDEBUG(buglevel, fmt, ...)
